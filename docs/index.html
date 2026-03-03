@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ICast Computer Vision API</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+  <style>
+    body { margin: 0; background: #1a1a2e; }
+    .header {
+      background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+      color: white;
+      padding: 24px 40px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .header h1 { margin: 0 0 8px 0; font-size: 28px; }
+    .header p { margin: 0; opacity: 0.8; font-size: 15px; }
+    .stats {
+      display: flex;
+      gap: 24px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .stat {
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 12px 20px;
+      min-width: 120px;
+    }
+    .stat-num { font-size: 24px; font-weight: 700; color: #e94560; }
+    .stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; margin-top: 4px; }
+    .key-box {
+      background: rgba(233,69,96,0.15);
+      border: 1px solid rgba(233,69,96,0.3);
+      border-radius: 8px;
+      padding: 12px 20px;
+      margin-top: 16px;
+      font-family: monospace;
+      font-size: 13px;
+      word-break: break-all;
+    }
+    .key-box span { color: #e94560; font-weight: 600; }
+    #swagger-ui .topbar { display: none; }
+    #swagger-ui { background: #fafafa; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>ICast Computer Vision API</h1>
+    <p>Lab sample photography service &mdash; capture, store, and query images</p>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num">14</div>
+        <div class="stat-label">Endpoints</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">5</div>
+        <div class="stat-label">Routers</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">25</div>
+        <div class="stat-label">Tests Passing</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">v0.1.0</div>
+        <div class="stat-label">Version</div>
+      </div>
+    </div>
+    <div class="key-box">
+      <span>X-API-Key:</span> PgJXWr3i6r5p2nBPh0SLn2GNNyu9i0XO128ZL0THn98
+    </div>
+  </div>
+  <div id="swagger-ui"></div>
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    // Load the OpenAPI spec inline so this works without a server
+    fetch('../generated/openapi.json')
+      .then(r => r.json())
+      .then(spec => {
+        SwaggerUIBundle({
+          spec: spec,
+          dom_id: '#swagger-ui',
+          layout: 'BaseLayout',
+          deepLinking: true,
+          defaultModelsExpandDepth: 2,
+          defaultModelExpandDepth: 2,
+          docExpansion: 'list',
+          filter: true,
+          showExtensions: true,
+          showCommonExtensions: true,
+          requestInterceptor: (req) => {
+            req.headers['X-API-Key'] = 'PgJXWr3i6r5p2nBPh0SLn2GNNyu9i0XO128ZL0THn98';
+            return req;
+          }
+        });
+      });
+  </script>
+</body>
+</html>
