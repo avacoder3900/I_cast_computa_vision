@@ -1,0 +1,26 @@
+services:
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017
+      MONGODB_DATABASE: icast_cv
+      IMAGE_STORAGE_PATH: /app/data/images
+      CORS_ORIGINS: "http://localhost:3000"
+      API_KEY: ""
+    volumes:
+      - image_data:/app/data/images
+    depends_on:
+      - mongodb
+
+volumes:
+  mongo_data:
+  image_data:

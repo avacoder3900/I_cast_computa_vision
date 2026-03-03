@@ -1,0 +1,12 @@
+.git
+.claude
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+data/
+tests/
+ralph-main/
+.env

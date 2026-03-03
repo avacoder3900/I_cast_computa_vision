@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "icast-cv"
+version = "0.1.0"
+description = "ICast Computer Vision API — lab sample photography service"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "motor>=3.6.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.5.0",
+    "opencv-python-headless>=4.10.0",
+    "Pillow>=10.4.0",
+    "python-multipart>=0.0.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.27.0",
+    "mypy>=1.11.0",
+    "mongomock-motor>=0.0.34",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/icast_cv"]
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ["tests/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
