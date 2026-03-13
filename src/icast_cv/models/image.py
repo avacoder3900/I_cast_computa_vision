@@ -5,6 +5,21 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
+class CartridgeTag(BaseModel):
+    """Links an image to a BIMS cartridge record and manufacturing phase."""
+
+    cartridge_record_id: str
+    phase: str = Field(
+        ...,
+        description=(
+            "Manufacturing phase when photo was taken, e.g. "
+            "backing, wax_filled, reagent_filled, inspected, sealed"
+        ),
+    )
+    labels: list[str] = Field(default_factory=list)
+    notes: str = ""
+
+
 class ImageCreate(BaseModel):
     """Internal model for creating an image document (not an API request body)."""
 
@@ -19,6 +34,7 @@ class ImageCreate(BaseModel):
     metadata: dict[str, object] = Field(default_factory=dict)
     captured_at: datetime
     image_url: str = ""
+    cartridge_tag: CartridgeTag | None = None
 
 
 class ImageInDB(BaseModel):
@@ -36,6 +52,7 @@ class ImageInDB(BaseModel):
     metadata: dict[str, object]
     captured_at: datetime
     image_url: str = ""
+    cartridge_tag: CartridgeTag | None = None
 
 
 class ImageResponse(BaseModel):
@@ -53,3 +70,4 @@ class ImageResponse(BaseModel):
     metadata: dict[str, object]
     captured_at: datetime
     image_url: str = ""
+    cartridge_tag: CartridgeTag | None = None

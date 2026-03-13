@@ -6,11 +6,13 @@ from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from icast_cv.exceptions import NotFoundError
-from icast_cv.models.image import ImageCreate, ImageInDB
+from icast_cv.models.image import CartridgeTag, ImageCreate, ImageInDB
 
 
 def _doc_to_image(doc: dict[str, Any]) -> ImageInDB:
     """Convert a raw MongoDB document to an ImageInDB model."""
+    raw_tag = doc.get("cartridge_tag")
+    tag = CartridgeTag(**raw_tag) if isinstance(raw_tag, dict) else None
     return ImageInDB(
         id=str(doc["_id"]),
         sample_id=doc["sample_id"],
@@ -24,6 +26,7 @@ def _doc_to_image(doc: dict[str, Any]) -> ImageInDB:
         metadata=doc.get("metadata", {}),
         captured_at=doc["captured_at"],
         image_url=doc.get("image_url", ""),
+        cartridge_tag=tag,
     )
 
 
@@ -54,16 +57,37 @@ async def get_image(
 async def list_images(
     db: AsyncIOMotorDatabase,  # type: ignore[type-arg]
     sample_id: str | None = None,
+    cartridge_id: str | None = None,
     skip: int = 0,
     limit: int = 50,
 ) -> list[ImageInDB]:
-    """List images with optional sample_id filter and pagination."""
+    """List images with optional sample_id/cartridge_id filter and pagination."""
     query: dict[str, Any] = {}
     if sample_id is not None:
         query["sample_id"] = sample_id
+    if cartridge_id is not None:
+        query["cartridge_tag.cartridge_record_id"] = cartridge_id
     cursor = db.images.find(query).skip(skip).limit(limit).sort("captured_at", -1)
     docs: list[dict[str, Any]] = await cursor.to_list(length=limit)
     return [_doc_to_image(d) for d in docs]
+
+
+async def tag_image(
+    db: AsyncIOMotorDatabase,  # type: ignore[type-arg]
+    image_id: str,
+    tag: CartridgeTag,
+) -> ImageInDB:
+    """Set or replace the cartridge tag on an image. Raises NotFoundError."""
+    if not ObjectId.is_valid(image_id):
+        raise NotFoundError(f"Image {image_id} not found")
+    doc = await db.images.find_one_and_update(
+        {"_id": ObjectId(image_id)},
+        {"$set": {"cartridge_tag": tag.model_dump()}},
+        return_document=True,
+    )
+    if doc is None:
+        raise NotFoundError(f"Image {image_id} not found")
+    return _doc_to_image(doc)
 
 
 async def delete_images_for_sample(

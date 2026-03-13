@@ -29,6 +29,8 @@ def _doc_to_inspection(doc: dict[str, Any]) -> InspectionInDB:
         processing_time_ms=doc.get("processing_time_ms"),
         created_at=doc["created_at"],
         completed_at=doc.get("completed_at"),
+        cartridge_record_id=doc.get("cartridge_record_id"),
+        phase=doc.get("phase"),
     )
 
 
@@ -50,6 +52,8 @@ async def create_inspection(
         "processing_time_ms": None,
         "created_at": now,
         "completed_at": None,
+        "cartridge_record_id": data.cartridge_record_id,
+        "phase": data.phase,
     }
     result = await db.inspections.insert_one(doc)
     doc["_id"] = result.inserted_id

@@ -1,6 +1,6 @@
 """Pydantic models for request/response and database documents."""
 
-from icast_cv.models.image import ImageCreate, ImageInDB, ImageResponse
+from icast_cv.models.image import CartridgeTag, ImageCreate, ImageInDB, ImageResponse
 from icast_cv.models.inspection import (
     InspectionCreate,
     InspectionInDB,
@@ -15,6 +15,7 @@ from icast_cv.models.sample import (
 )
 
 __all__ = [
+    "CartridgeTag",
     "ImageCreate",
     "ImageInDB",
     "ImageResponse",

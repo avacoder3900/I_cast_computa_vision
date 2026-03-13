@@ -19,6 +19,8 @@ class InspectionCreate(BaseModel):
     sample_id: str
     image_id: str
     inspection_type: str = Field(..., min_length=1)
+    cartridge_record_id: str | None = None
+    phase: str | None = None
 
 
 class InspectionResult(BaseModel):
@@ -46,6 +48,8 @@ class InspectionInDB(BaseModel):
     processing_time_ms: int | None = None
     created_at: datetime
     completed_at: datetime | None = None
+    cartridge_record_id: str | None = None
+    phase: str | None = None
 
 
 class InspectionResponse(BaseModel):
@@ -63,3 +67,5 @@ class InspectionResponse(BaseModel):
     processing_time_ms: int | None = None
     created_at: datetime
     completed_at: datetime | None = None
+    cartridge_record_id: str | None = None
+    phase: str | None = None

@@ -1,4 +1,4 @@
-"""Image query and file-serving endpoints."""
+"""Image query, file-serving, and cartridge tagging endpoints."""
 
 from pathlib import Path
 from typing import Annotated, Any
@@ -8,10 +8,10 @@ from fastapi.responses import FileResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from icast_cv.config import get_settings
-from icast_cv.crud.image_crud import get_image, list_images
+from icast_cv.crud.image_crud import get_image, list_images, tag_image
 from icast_cv.db import get_database
 from icast_cv.exceptions import NotFoundError
-from icast_cv.models.image import ImageResponse
+from icast_cv.models.image import CartridgeTag, ImageResponse
 
 router = APIRouter(tags=["images"])
 
@@ -22,11 +22,14 @@ DB = Annotated[AsyncIOMotorDatabase, Depends(get_database)]  # type: ignore[type
 async def list_images_endpoint(
     db: DB,
     sample_id: str | None = None,
+    cartridge_id: str | None = None,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> list[dict[str, Any]]:
-    """List images with optional sample_id filter and pagination."""
-    images = await list_images(db, sample_id=sample_id, skip=skip, limit=limit)
+    """List images with optional sample_id/cartridge_id filter and pagination."""
+    images = await list_images(
+        db, sample_id=sample_id, cartridge_id=cartridge_id, skip=skip, limit=limit
+    )
     return [img.model_dump() for img in images]
 
 
@@ -40,6 +43,20 @@ async def list_sample_images_endpoint(
     """List images for a specific sample."""
     images = await list_images(db, sample_id=sample_id, skip=skip, limit=limit)
     return [img.model_dump() for img in images]
+
+
+@router.post("/images/{image_id}/tags", response_model=ImageResponse)
+async def tag_image_endpoint(
+    image_id: str,
+    data: CartridgeTag,
+    db: DB,
+) -> dict[str, Any]:
+    """Set or replace the cartridge tag on an image."""
+    try:
+        image = await tag_image(db, image_id, data)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return image.model_dump()
 
 
 @router.get("/images/{image_id}/file")
