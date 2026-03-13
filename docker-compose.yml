@@ -21,6 +21,21 @@ services:
     depends_on:
       - mongodb
 
+  worker:
+    build: .
+    command: ["python", "-m", "scripts.run_worker"]
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017
+      MONGODB_DATABASE: icast_cv
+      IMAGE_STORAGE_PATH: /app/data/images
+      MODEL_PATH: /app/model.onnx
+      MODEL_INPUT_SIZE: "224"
+      CONFIDENCE_THRESHOLD: "0.5"
+    volumes:
+      - image_data:/app/data/images
+    depends_on:
+      - mongodb
+
 volumes:
   mongo_data:
   image_data:

@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     r2_bucket_name: str = ""
     r2_public_url: str = ""
 
+    # CV inference worker
+    model_path: str = "model.onnx"
+    model_input_size: int = 224
+    confidence_threshold: float = 0.5
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
     @property

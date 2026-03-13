@@ -17,6 +17,7 @@ dependencies = [
     "Pillow>=10.4.0",
     "python-multipart>=0.0.12",
     "boto3>=1.35.0",
+    "onnxruntime>=1.19.0",
 ]
 
 [project.optional-dependencies]
@@ -42,7 +43,7 @@ asyncio_mode = "auto"
 filterwarnings = ["ignore::DeprecationWarning"]
 
 [[tool.mypy.overrides]]
-module = ["boto3", "boto3.*", "botocore", "botocore.*"]
+module = ["boto3", "boto3.*", "botocore", "botocore.*", "onnxruntime", "onnxruntime.*"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]

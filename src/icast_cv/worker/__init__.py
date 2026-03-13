@@ -1,0 +1,1 @@
+"""Background CV inference worker."""
