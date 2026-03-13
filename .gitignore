@@ -23,6 +23,8 @@ env/
 
 # Data
 data/images/
+training/data/
+training/results/
 
 # OS
 .DS_Store

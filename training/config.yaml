@@ -1,0 +1,28 @@
+# Anomalib training configuration for ICast CV
+
+model:
+  name: patchcore
+  backbone: wide_resnet50_2
+  layers:
+    - layer2
+    - layer3
+  coreset_sampling_ratio: 0.1
+  num_neighbors: 9
+
+dataset:
+  name: folder
+  root: ./data
+  normal_dir: good
+  abnormal_dir: defect
+  image_size: 224
+  train_batch_size: 32
+  test_batch_size: 32
+  num_workers: 4
+
+trainer:
+  max_epochs: 1          # PatchCore is single-pass, no iterative training
+  accelerator: auto
+  devices: 1
+
+export:
+  onnx_path: ../model.onnx
