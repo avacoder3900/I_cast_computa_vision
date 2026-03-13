@@ -47,10 +47,12 @@ async def capture_image(
     except CameraError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    # Save to filesystem
+    # Save to filesystem (and optionally upload to R2)
     settings = get_settings()
     try:
-        stored = await save_image(frame, settings.image_storage_path, data.sample_id)
+        stored = await save_image(
+            frame, settings.image_storage_path, data.sample_id, settings=settings
+        )
     except StorageError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -66,6 +68,7 @@ async def capture_image(
         camera_index=data.camera_index,
         metadata=data.metadata,
         captured_at=datetime.now(timezone.utc),
+        image_url=stored.image_url,
     )
     image = await create_image(db, image_data)
     return image.model_dump()

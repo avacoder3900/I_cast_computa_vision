@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     import numpy as np
     import numpy.typing as npt
 
+    from icast_cv.config import Settings
+
 THUMBNAIL_MAX_SIZE = 256
 
 
@@ -30,6 +32,7 @@ class StoredImage:
     width: int
     height: int
     file_size_bytes: int
+    image_url: str = ""
 
 
 def _save_sync(
@@ -84,6 +87,23 @@ async def save_image(
     frame: Any,
     base_path: Path,
     sample_id: str,
+    settings: Settings | None = None,
 ) -> StoredImage:
-    """Save an image frame to disk and generate a thumbnail."""
-    return await asyncio.to_thread(_save_sync, frame, base_path, sample_id)
+    """Save an image frame to disk and generate a thumbnail.
+
+    When R2 settings are configured, also uploads to cloud storage and
+    populates ``image_url`` on the returned :class:`StoredImage`.
+    """
+    stored = await asyncio.to_thread(_save_sync, frame, base_path, sample_id)
+
+    if settings is not None and settings.r2_configured:
+        from icast_cv.services.cloud_storage_service import upload_file
+
+        image_key = stored.file_path.replace("\\", "/")
+        thumb_key = stored.thumbnail_path.replace("\\", "/")
+
+        image_url = await upload_file(base_path / stored.file_path, image_key, settings)
+        await upload_file(base_path / stored.thumbnail_path, thumb_key, settings)
+        stored.image_url = image_url
+
+    return stored

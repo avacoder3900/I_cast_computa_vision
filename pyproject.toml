@@ -16,6 +16,7 @@ dependencies = [
     "opencv-python-headless>=4.10.0",
     "Pillow>=10.4.0",
     "python-multipart>=0.0.12",
+    "boto3>=1.35.0",
 ]
 
 [project.optional-dependencies]
@@ -39,6 +40,10 @@ exclude = ["tests/"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 filterwarnings = ["ignore::DeprecationWarning"]
+
+[[tool.mypy.overrides]]
+module = ["boto3", "boto3.*", "botocore", "botocore.*"]
+ignore_missing_imports = true
 
 [tool.pydantic-mypy]
 init_forbid_extra = true

@@ -23,6 +23,7 @@ def _doc_to_image(doc: dict[str, Any]) -> ImageInDB:
         camera_index=doc["camera_index"],
         metadata=doc.get("metadata", {}),
         captured_at=doc["captured_at"],
+        image_url=doc.get("image_url", ""),
     )
 
 

@@ -24,7 +24,19 @@ class Settings(BaseSettings):
     # API key — set to empty string to disable auth (dev only)
     api_key: str = ""
 
+    # Cloudflare R2 (S3-compatible) — leave empty to use local storage only
+    r2_account_id: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket_name: str = ""
+    r2_public_url: str = ""
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+
+    @property
+    def r2_configured(self) -> bool:
+        """Return True if R2 credentials are fully configured."""
+        return bool(self.r2_bucket_name and self.r2_access_key_id)
 
     @property
     def cors_origin_list(self) -> list[str]:

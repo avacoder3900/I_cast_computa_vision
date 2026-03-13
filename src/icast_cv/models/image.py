@@ -18,6 +18,7 @@ class ImageCreate(BaseModel):
     camera_index: int
     metadata: dict[str, object] = Field(default_factory=dict)
     captured_at: datetime
+    image_url: str = ""
 
 
 class ImageInDB(BaseModel):
@@ -34,6 +35,7 @@ class ImageInDB(BaseModel):
     camera_index: int
     metadata: dict[str, object]
     captured_at: datetime
+    image_url: str = ""
 
 
 class ImageResponse(BaseModel):
@@ -50,3 +52,4 @@ class ImageResponse(BaseModel):
     camera_index: int
     metadata: dict[str, object]
     captured_at: datetime
+    image_url: str = ""
