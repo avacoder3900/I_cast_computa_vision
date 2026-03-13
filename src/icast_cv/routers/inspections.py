@@ -65,6 +65,19 @@ async def list_inspections_endpoint(
     return [i.model_dump() for i in inspections]
 
 
+@router.get("/inspections/{inspection_id}/poll", response_model=InspectionResponse)
+async def poll_inspection(
+    inspection_id: str,
+    db: DB,
+) -> dict[str, Any]:
+    """Poll for inspection result. Returns current state (check status field)."""
+    try:
+        inspection = await get_inspection(db, inspection_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return inspection.model_dump()
+
+
 @router.post(
     "/inspections/{inspection_id}/result",
     response_model=InspectionResponse,
