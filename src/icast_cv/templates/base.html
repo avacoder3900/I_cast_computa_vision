@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ICast CV{% endblock %} — Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="container-fluid">
+        <ul>
+            <li><a href="/ui/" class="brand"><strong>ICast CV</strong></a></li>
+        </ul>
+        <ul>
+            <li><a href="/ui/" {% if active == 'dashboard' %}class="active"{% endif %}>Dashboard</a></li>
+            <li><a href="/ui/capture" {% if active == 'capture' %}class="active"{% endif %}>Capture</a></li>
+            <li><a href="/ui/training" {% if active == 'training' %}class="active"{% endif %}>Training</a></li>
+            <li><a href="/ui/inspections" {% if active == 'inspections' %}class="active"{% endif %}>Inspections</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="container-fluid">
+        <small>ICast Computer Vision System &bull; <a href="/docs">API Docs</a></small>
+    </footer>
+
+    <script src="/static/js/api.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -96,10 +96,10 @@ async def test_list_inspections_by_sample(client: AsyncClient, mock_db: Any) -> 
 
 
 @pytest.mark.asyncio
-async def test_list_inspections_requires_sample_id(client: AsyncClient) -> None:
-    """GET /api/inspections without sample_id returns 400."""
+async def test_list_inspections_without_filters(client: AsyncClient) -> None:
+    """GET /api/inspections without filters returns 200 (all inspections)."""
     resp = await client.get("/api/inspections")
-    assert resp.status_code == 400
+    assert resp.status_code == 200
 
 
 @pytest.mark.asyncio

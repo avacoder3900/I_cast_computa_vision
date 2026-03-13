@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% set active = "training" %}
+{% block title %}Training Manager{% endblock %}
+
+{% block content %}
+<h2>Training Manager</h2>
+
+<div class="stats-grid">
+    <div class="stat-card pass">
+        <div class="stat-value" id="good-count">—</div>
+        <div class="stat-label">Good Images</div>
+    </div>
+    <div class="stat-card fail">
+        <div class="stat-value" id="defect-count">—</div>
+        <div class="stat-label">Defect Images</div>
+    </div>
+    <div class="stat-card info">
+        <div class="stat-value" id="total-training">—</div>
+        <div class="stat-label">Total Training Images</div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Upload Training Images</h3>
+    <div class="form-row">
+        <label>
+            Category
+            <select id="upload-category">
+                <option value="good">Good (normal)</option>
+                <option value="defect">Defect (anomaly)</option>
+            </select>
+        </label>
+    </div>
+
+    <div class="upload-zone" id="upload-zone">
+        <p>Drag & drop images here, or click to browse</p>
+        <p class="text-muted"><small>Accepts JPG, PNG, BMP, TIFF</small></p>
+        <input type="file" id="file-input" multiple accept="image/*">
+    </div>
+
+    <div id="upload-progress" class="hidden mt-1">
+        <p id="upload-status">Uploading...</p>
+    </div>
+
+    <div id="upload-results" class="hidden mt-1">
+        <table>
+            <thead>
+                <tr><th>File</th><th>Category</th><th>Status</th></tr>
+            </thead>
+            <tbody id="upload-results-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Training</h3>
+    <div id="training-controls">
+        <p class="text-muted">Upload at least 5 good images before starting training. Defect images are optional but improve detection accuracy.</p>
+        <div class="form-row">
+            <button id="start-training-btn">Start Training</button>
+            <button id="download-model-btn" class="secondary" disabled>Download Model (.onnx)</button>
+        </div>
+    </div>
+
+    <div id="training-progress" class="hidden mt-1">
+        <div class="progress-bar">
+            <div class="fill" id="training-fill" style="width: 0%">0%</div>
+        </div>
+        <p id="training-message" class="text-muted"></p>
+    </div>
+
+    <div id="training-status-badge" class="hidden mt-1">
+        <p>Status: <span id="training-status-text"></span></p>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Training Logs</h3>
+    <div class="log-output" id="training-logs">
+        Waiting for training to start...
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/training.js"></script>
+{% endblock %}

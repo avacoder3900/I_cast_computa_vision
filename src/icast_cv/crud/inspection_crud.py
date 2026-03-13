@@ -73,6 +73,60 @@ async def get_inspection(
     return _doc_to_inspection(doc)
 
 
+async def list_all_inspections(
+    db: AsyncIOMotorDatabase,  # type: ignore[type-arg]
+    sample_id: str | None = None,
+    cartridge_id: str | None = None,
+    phase: str | None = None,
+    result: str | None = None,
+    skip: int = 0,
+    limit: int = 50,
+) -> list[InspectionInDB]:
+    """List inspections with optional filters and pagination."""
+    query: dict[str, Any] = {}
+    if sample_id is not None:
+        query["sample_id"] = sample_id
+    if cartridge_id is not None:
+        query["cartridge_record_id"] = cartridge_id
+    if phase is not None:
+        query["phase"] = phase
+    if result is not None:
+        query["result"] = result
+    cursor = (
+        db.inspections.find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort("created_at", -1)
+    )
+    docs: list[dict[str, Any]] = await cursor.to_list(length=limit)
+    return [_doc_to_inspection(d) for d in docs]
+
+
+async def get_inspection_stats(
+    db: AsyncIOMotorDatabase,  # type: ignore[type-arg]
+) -> dict[str, Any]:
+    """Get aggregate inspection statistics."""
+    total = await db.inspections.count_documents({})
+    pass_count = await db.inspections.count_documents({"result": "pass"})
+    fail_count = await db.inspections.count_documents({"result": "fail"})
+    pending = await db.inspections.count_documents({"status": "pending"})
+    processing = await db.inspections.count_documents({"status": "processing"})
+    total_images = await db.images.count_documents({})
+    cursor = db.inspections.find().sort("created_at", -1).limit(10)
+    recent_docs: list[dict[str, Any]] = await cursor.to_list(length=10)
+    recent = [_doc_to_inspection(d) for d in recent_docs]
+    return {
+        "total_inspections": total,
+        "pass_count": pass_count,
+        "fail_count": fail_count,
+        "pending_count": pending,
+        "processing_count": processing,
+        "total_images": total_images,
+        "pass_rate": round(pass_count / total * 100, 1) if total > 0 else 0,
+        "recent_inspections": [r.model_dump() for r in recent],
+    }
+
+
 async def list_inspections_by_sample(
     db: AsyncIOMotorDatabase,  # type: ignore[type-arg]
     sample_id: str,

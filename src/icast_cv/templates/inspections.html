@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% set active = "inspections" %}
+{% block title %}Inspection History{% endblock %}
+
+{% block content %}
+<h2>Inspection History</h2>
+
+<div class="card">
+    <div class="filter-bar">
+        <label>
+            Cartridge ID
+            <input type="text" id="filter-cartridge" placeholder="Filter by cartridge...">
+        </label>
+        <label>
+            Phase
+            <select id="filter-phase">
+                <option value="">All phases</option>
+                <option value="backing">Backing</option>
+                <option value="wax_filled">Wax Filled</option>
+                <option value="reagent_filled">Reagent Filled</option>
+                <option value="inspected">Inspected</option>
+                <option value="sealed">Sealed</option>
+            </select>
+        </label>
+        <label>
+            Result
+            <select id="filter-result">
+                <option value="">All results</option>
+                <option value="pass">Pass</option>
+                <option value="fail">Fail</option>
+            </select>
+        </label>
+        <button id="filter-btn" class="secondary">Apply Filters</button>
+        <button id="clear-btn" class="contrast outline">Clear</button>
+    </div>
+</div>
+
+<div id="inspections-table">
+    <table role="grid">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Cartridge</th>
+                <th>Phase</th>
+                <th>Status</th>
+                <th>Result</th>
+                <th>Score</th>
+                <th>Defects</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody id="inspections-body">
+            <tr><td colspan="8" class="text-center">Loading inspections...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="form-row">
+    <button id="load-more-btn" class="secondary outline">Load More</button>
+</div>
+
+<!-- Inspection Detail Modal -->
+<dialog id="inspection-modal">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev" id="modal-close"></button>
+            <h3>Inspection Detail</h3>
+        </header>
+        <div class="inspection-detail">
+            <div class="image-panel">
+                <img id="modal-image" src="" alt="Inspection image">
+            </div>
+            <div>
+                <table>
+                    <tbody>
+                        <tr><th>ID</th><td id="modal-id">—</td></tr>
+                        <tr><th>Sample</th><td id="modal-sample">—</td></tr>
+                        <tr><th>Cartridge</th><td id="modal-cartridge">—</td></tr>
+                        <tr><th>Phase</th><td id="modal-phase">—</td></tr>
+                        <tr><th>Type</th><td id="modal-type">—</td></tr>
+                        <tr><th>Status</th><td id="modal-status">—</td></tr>
+                        <tr><th>Result</th><td id="modal-result">—</td></tr>
+                        <tr><th>Confidence</th><td id="modal-score">—</td></tr>
+                        <tr><th>Model</th><td id="modal-model">—</td></tr>
+                        <tr><th>Processing</th><td id="modal-time">—</td></tr>
+                        <tr><th>Created</th><td id="modal-created">—</td></tr>
+                        <tr><th>Completed</th><td id="modal-completed">—</td></tr>
+                    </tbody>
+                </table>
+                <h4>Defects</h4>
+                <div id="modal-defects">None</div>
+            </div>
+        </div>
+        <footer>
+            <button id="modal-close-btn" class="secondary">Close</button>
+        </footer>
+    </article>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/inspections.js"></script>
+{% endblock %}

@@ -2,14 +2,26 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from icast_cv.auth import require_api_key
 from icast_cv.config import get_settings
 from icast_cv.db import close_db, connect_db
-from icast_cv.routers import cameras, capture, health, images, inspections, samples
+from icast_cv.routers import (
+    cameras,
+    capture,
+    dashboard,
+    health,
+    images,
+    inspections,
+    samples,
+    training,
+    ui,
+)
 
 
 @asynccontextmanager
@@ -24,6 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             "MongoDB not available — running in degraded mode"
         )
     settings.image_storage_path.mkdir(parents=True, exist_ok=True)
+    settings.training_data_path.mkdir(parents=True, exist_ok=True)
     yield
     await close_db()
 
@@ -48,8 +61,15 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Static files
+    static_dir = Path(__file__).resolve().parent / "static"
+    application.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
     # Public routes (no auth)
     application.include_router(health.router)
+
+    # UI routes (no auth — admin dashboard)
+    application.include_router(ui.router)
 
     # Protected routes (API key required when configured)
     api_deps = [Depends(require_api_key)]
@@ -67,6 +87,12 @@ def create_app() -> FastAPI:
     )
     application.include_router(
         inspections.router, prefix="/api", dependencies=api_deps
+    )
+    application.include_router(
+        training.router, prefix="/api/v1", dependencies=api_deps
+    )
+    application.include_router(
+        dashboard.router, prefix="/api/v1", dependencies=api_deps
     )
 
     return application

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% set active = "capture" %}
+{% block title %}Capture & Inspect{% endblock %}
+
+{% block content %}
+<h2>Capture & Inspect</h2>
+
+<div class="card">
+    <h3>Setup</h3>
+    <div class="form-row">
+        <label>
+            Sample / Cartridge ID
+            <input type="text" id="sample-id" placeholder="Enter or select sample ID">
+        </label>
+        <label>
+            Camera
+            <select id="camera-select">
+                <option value="0">Loading cameras...</option>
+            </select>
+        </label>
+    </div>
+    <div class="form-row mt-1">
+        <label>
+            Phase
+            <select id="phase-select">
+                <option value="">Select phase...</option>
+                <option value="backing">Backing</option>
+                <option value="wax_filled">Wax Filled</option>
+                <option value="reagent_filled">Reagent Filled</option>
+                <option value="inspected">Inspected</option>
+                <option value="sealed">Sealed</option>
+            </select>
+        </label>
+        <label>
+            Tags (comma-separated)
+            <input type="text" id="tags-input" placeholder="e.g. wax_fill, reagent_fill">
+        </label>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Capture</h3>
+    <p class="text-muted">Click the button below to capture a photo from the selected camera and submit it for inspection.</p>
+    <button id="capture-btn" class="primary">Capture & Inspect</button>
+    <div id="capture-status" class="hidden mt-1">
+        <article aria-busy="true">Capturing and submitting for inspection...</article>
+    </div>
+</div>
+
+<div id="result-section" class="hidden">
+    <div class="card">
+        <h3>Result</h3>
+        <div class="inspection-detail">
+            <div class="image-panel">
+                <img id="result-image" src="" alt="Captured image">
+            </div>
+            <div>
+                <table>
+                    <tbody>
+                        <tr><th>Inspection ID</th><td id="result-id">—</td></tr>
+                        <tr><th>Status</th><td id="result-status">—</td></tr>
+                        <tr><th>Result</th><td id="result-result">—</td></tr>
+                        <tr><th>Confidence</th><td id="result-score">—</td></tr>
+                        <tr><th>Defects</th><td id="result-defects">—</td></tr>
+                        <tr><th>Processing Time</th><td id="result-time">—</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Existing Samples</h3>
+    <div id="samples-list">
+        <p class="text-muted">Loading samples...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/capture.js"></script>
+{% endblock %}

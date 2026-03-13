@@ -8,6 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from icast_cv.crud.inspection_crud import (
     create_inspection,
     get_inspection,
+    list_all_inspections,
     list_inspections_by_sample,
     update_inspection_result,
 )
@@ -51,16 +52,21 @@ async def get_inspection_endpoint(
 async def list_inspections_endpoint(
     db: DB,
     sample_id: str | None = None,
+    cartridge_id: str | None = None,
+    phase: str | None = None,
+    result: str | None = None,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> list[dict[str, Any]]:
-    """List inspections, optionally filtered by sample_id."""
-    if sample_id is None:
-        raise HTTPException(
-            status_code=400, detail="sample_id query parameter is required"
-        )
-    inspections = await list_inspections_by_sample(
-        db, sample_id, skip=skip, limit=limit
+    """List inspections with optional filters."""
+    inspections = await list_all_inspections(
+        db,
+        sample_id=sample_id,
+        cartridge_id=cartridge_id,
+        phase=phase,
+        result=result,
+        skip=skip,
+        limit=limit,
     )
     return [i.model_dump() for i in inspections]
 

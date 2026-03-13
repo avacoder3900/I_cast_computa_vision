@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% set active = "dashboard" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h2>Dashboard</h2>
+
+<div class="stats-grid">
+    <div class="stat-card info">
+        <div class="stat-value" id="total-images">{{ stats.total_images }}</div>
+        <div class="stat-label">Total Images</div>
+    </div>
+    <div class="stat-card info">
+        <div class="stat-value" id="total-inspections">{{ stats.total_inspections }}</div>
+        <div class="stat-label">Total Inspections</div>
+    </div>
+    <div class="stat-card pass">
+        <div class="stat-value" id="pass-count">{{ stats.pass_count }}</div>
+        <div class="stat-label">Passed</div>
+    </div>
+    <div class="stat-card fail">
+        <div class="stat-value" id="fail-count">{{ stats.fail_count }}</div>
+        <div class="stat-label">Failed</div>
+    </div>
+    <div class="stat-card pending">
+        <div class="stat-value" id="pending-count">{{ stats.pending_count }}</div>
+        <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat-card info">
+        <div class="stat-value" id="pass-rate">{{ stats.pass_rate }}%</div>
+        <div class="stat-label">Pass Rate</div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Recent Inspections</h3>
+    <div id="recent-inspections">
+        {% if stats.recent_inspections %}
+        <table role="grid">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cartridge</th>
+                    <th>Phase</th>
+                    <th>Result</th>
+                    <th>Score</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for insp in stats.recent_inspections %}
+                <tr data-result="{{ insp.result or 'pending' }}">
+                    <td><a href="/ui/inspections?id={{ insp.id }}">{{ insp.id[:8] }}...</a></td>
+                    <td>
+                        {% if insp.cartridge_record_id %}
+                        <a href="/ui/cartridge/{{ insp.cartridge_record_id }}">{{ insp.cartridge_record_id[:12] }}</a>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>{{ insp.phase or '—' }}</td>
+                    <td>
+                        {% if insp.result == 'pass' %}
+                        <span class="badge badge-pass">pass</span>
+                        {% elif insp.result == 'fail' %}
+                        <span class="badge badge-fail">fail</span>
+                        {% else %}
+                        <span class="badge badge-pending">{{ insp.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ "%.1f%%"|format(insp.confidence_score * 100) if insp.confidence_score is not none else '—' }}</td>
+                    <td>{{ insp.created_at.strftime('%Y-%m-%d %H:%M') if insp.created_at else '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>No inspections yet. <a href="/ui/capture">Capture your first image</a> to get started.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <h3>Quick Actions</h3>
+    <div class="form-row">
+        <a href="/ui/capture" role="button">Capture & Inspect</a>
+        <a href="/ui/training" role="button" class="secondary">Manage Training</a>
+        <a href="/ui/inspections" role="button" class="contrast">View All Inspections</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

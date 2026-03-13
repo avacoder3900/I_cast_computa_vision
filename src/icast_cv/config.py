@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     r2_bucket_name: str = ""
     r2_public_url: str = ""
 
+    # Training data
+    training_data_path: Path = Path("data/training")
+
     # CV inference worker
     model_path: str = "model.onnx"
     model_input_size: int = 224

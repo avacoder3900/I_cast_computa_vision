@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% set active = "inspections" %}
+{% block title %}Cartridge {{ cartridge_id }}{% endblock %}
+
+{% block content %}
+<h2>Cartridge: <code>{{ cartridge_id }}</code></h2>
+
+<div class="stats-grid" id="cartridge-stats">
+    <div class="stat-card info">
+        <div class="stat-value" id="cart-total">—</div>
+        <div class="stat-label">Total Inspections</div>
+    </div>
+    <div class="stat-card pass">
+        <div class="stat-value" id="cart-pass">—</div>
+        <div class="stat-label">Passed</div>
+    </div>
+    <div class="stat-card fail">
+        <div class="stat-value" id="cart-fail">—</div>
+        <div class="stat-label">Failed</div>
+    </div>
+    <div class="stat-card info">
+        <div class="stat-value" id="cart-images">—</div>
+        <div class="stat-label">Images</div>
+    </div>
+</div>
+
+<div id="phases-container">
+    <p class="text-muted">Loading cartridge data...</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const CARTRIDGE_ID = "{{ cartridge_id }}";
+</script>
+<script src="/static/js/cartridge.js"></script>
+{% endblock %}
