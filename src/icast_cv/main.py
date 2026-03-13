@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from icast_cv.auth import require_api_key
 from icast_cv.config import get_settings
 from icast_cv.db import close_db, connect_db
-from icast_cv.routers import cameras, capture, health, images, samples
+from icast_cv.routers import cameras, capture, health, images, inspections, samples
 
 
 @asynccontextmanager
@@ -64,6 +64,9 @@ def create_app() -> FastAPI:
     )
     application.include_router(
         cameras.router, prefix="/api/v1", dependencies=api_deps
+    )
+    application.include_router(
+        inspections.router, prefix="/api", dependencies=api_deps
     )
 
     return application
