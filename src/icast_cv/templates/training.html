@@ -7,15 +7,15 @@
 
 <div class="stats-grid">
     <div class="stat-card pass">
-        <div class="stat-value" id="good-count">—</div>
+        <div class="stat-value" id="good-count">--</div>
         <div class="stat-label">Good Images</div>
     </div>
     <div class="stat-card fail">
-        <div class="stat-value" id="defect-count">—</div>
+        <div class="stat-value" id="defect-count">--</div>
         <div class="stat-label">Defect Images</div>
     </div>
     <div class="stat-card info">
-        <div class="stat-value" id="total-training">—</div>
+        <div class="stat-value" id="total-training">--</div>
         <div class="stat-label">Total Training Images</div>
     </div>
 </div>
@@ -24,8 +24,10 @@
     <h3>Upload Training Images</h3>
     <div class="form-row">
         <label>
-            Category
-            <select id="upload-category">
+            <strong>Category</strong>
+            <span class="count-badge count-badge-good" id="good-badge">0</span>
+            <span class="count-badge count-badge-defect" id="defect-badge">0</span>
+            <select id="upload-category" class="category-select-prominent cat-good">
                 <option value="good">Good (normal)</option>
                 <option value="defect">Defect (anomaly)</option>
             </select>

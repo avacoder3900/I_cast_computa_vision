@@ -288,6 +288,259 @@ footer {
     }
 }
 
+/* Gallery page */
+.gallery-item {
+    position: relative;
+}
+
+.gallery-checkbox {
+    position: absolute;
+    top: 0.4rem;
+    left: 0.4rem;
+    z-index: 2;
+}
+
+.gallery-checkbox input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0;
+    cursor: pointer;
+}
+
+.caption-top {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.caption-filename {
+    font-weight: 600;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0.2rem;
+}
+
+.caption-tags {
+    font-size: 0.7rem;
+    color: var(--pico-muted-color);
+    margin-bottom: 0.2rem;
+}
+
+.caption-date {
+    font-size: 0.7rem;
+    color: var(--pico-muted-color);
+    margin-bottom: 0.3rem;
+}
+
+.caption-actions {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.caption-actions select.inline-category {
+    margin: 0;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+    height: auto;
+    flex: 1;
+}
+
+.caption-actions .save-single-btn {
+    margin: 0;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    height: auto;
+    white-space: nowrap;
+}
+
+/* Batch action bar */
+.batch-bar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: rgba(99, 102, 241, 0.08);
+    border-radius: var(--pico-border-radius);
+    flex-wrap: wrap;
+}
+
+.batch-bar label.batch-select-all {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.batch-bar label.batch-select-all input {
+    margin: 0;
+}
+
+.batch-bar #selected-count {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+}
+
+.batch-bar select {
+    margin: 0;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.85rem;
+    height: auto;
+    width: auto;
+}
+
+.batch-bar button {
+    margin: 0;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.85rem;
+    height: auto;
+}
+
+/* Lightbox */
+.lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.lightbox-content img {
+    max-width: 100%;
+    max-height: 65vh;
+    border-radius: var(--pico-border-radius);
+    object-fit: contain;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    font-size: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    padding: 0;
+    margin: 0;
+}
+
+.lightbox-info {
+    background: var(--pico-card-background-color);
+    border-radius: var(--pico-border-radius);
+    padding: 1rem 1.5rem;
+    width: 100%;
+    max-width: 600px;
+}
+
+.lightbox-info h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+}
+
+.lightbox-info p {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+}
+
+.lightbox-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.lightbox-controls label {
+    margin-bottom: 0;
+    flex: 1;
+    min-width: 120px;
+}
+
+.lightbox-controls select,
+.lightbox-controls input {
+    margin-bottom: 0;
+}
+
+.lightbox-controls button {
+    margin-bottom: 0;
+}
+
+/* Training page: prominent category dropdown */
+.category-select-prominent {
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 0.6rem 1rem;
+    border-width: 2px;
+}
+
+.category-select-prominent.cat-good {
+    border-color: #4caf50;
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.category-select-prominent.cat-defect {
+    border-color: #f44336;
+    color: #f44336;
+    background: rgba(244, 67, 54, 0.1);
+}
+
+.category-select-prominent option {
+    color: var(--pico-color);
+    background: var(--pico-card-background-color);
+}
+
+.count-badge {
+    display: inline-block;
+    min-width: 1.5rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: center;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+}
+
+.count-badge-good {
+    background: #1b5e20;
+    color: #81c784;
+}
+
+.count-badge-defect {
+    background: #b71c1c;
+    color: #ef9a9a;
+}
+
 /* Utility */
 .mt-1 { margin-top: 1rem; }
 .mb-1 { margin-bottom: 1rem; }

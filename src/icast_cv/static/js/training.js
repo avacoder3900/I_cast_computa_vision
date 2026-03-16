@@ -17,8 +17,19 @@
     const trainingStatusBadge = document.getElementById('training-status-badge');
     const trainingStatusText = document.getElementById('training-status-text');
     const trainingLogs = document.getElementById('training-logs');
+    const goodBadge = document.getElementById('good-badge');
+    const defectBadge = document.getElementById('defect-badge');
 
     let pollInterval = null;
+
+    // Color-code the category dropdown on change
+    function updateCategoryStyle() {
+        categorySelect.classList.remove('cat-good', 'cat-defect');
+        categorySelect.classList.add(
+            categorySelect.value === 'good' ? 'cat-good' : 'cat-defect'
+        );
+    }
+    categorySelect.addEventListener('change', updateCategoryStyle);
 
     // Load data stats
     async function loadStats() {
@@ -27,6 +38,9 @@
             document.getElementById('good-count').textContent = stats.good_count;
             document.getElementById('defect-count').textContent = stats.defect_count;
             document.getElementById('total-training').textContent = stats.total;
+            // Update count badges next to dropdown
+            if (goodBadge) goodBadge.textContent = stats.good_count;
+            if (defectBadge) defectBadge.textContent = stats.defect_count;
         } catch (e) {
             console.warn('Failed to load training stats:', e.message);
         }
@@ -171,6 +185,7 @@
     }
 
     // Initialize
+    updateCategoryStyle();
     loadStats();
     checkInitialStatus();
 })();

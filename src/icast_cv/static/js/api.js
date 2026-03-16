@@ -107,6 +107,16 @@ const API = {
         fd.append('category', category);
         return this.upload('/api/v1/training/upload', fd);
     },
+    listTrainingImages(params) { return this.get('/api/v1/training/images', params); },
+    recategorizeImage(filename, newCategory) {
+        return this.patch(`/api/v1/training/images/${filename}`, { new_category: newCategory });
+    },
+    batchRecategorize(filenames, newCategory) {
+        return this.patch('/api/v1/training/images-batch', { filenames, new_category: newCategory });
+    },
+
+    // Gallery
+    getGalleryAll(params) { return this.get('/api/v1/gallery/all', params); },
 };
 
 // Auto-init

@@ -2,16 +2,21 @@
 
 import asyncio
 import logging
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
 
 from icast_cv.config import get_settings
 
 router = APIRouter(tags=["training"])
 logger = logging.getLogger(__name__)
+
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff"}
 
 # In-memory training state (single-process)
 _training_state: dict[str, Any] = {
@@ -25,30 +30,36 @@ _training_state: dict[str, Any] = {
 }
 
 
-def _get_training_dirs() -> tuple[Path, Path]:
-    """Return (good_dir, defect_dir), creating them if needed."""
+def _get_training_dirs() -> tuple[Path, Path, Path]:
+    """Return (good_dir, defect_dir, uncategorized_dir), creating them if needed."""
     settings = get_settings()
     base = settings.training_data_path
     good_dir = base / "good"
     defect_dir = base / "defect"
+    uncategorized_dir = base / "uncategorized"
     good_dir.mkdir(parents=True, exist_ok=True)
     defect_dir.mkdir(parents=True, exist_ok=True)
-    return good_dir, defect_dir
+    uncategorized_dir.mkdir(parents=True, exist_ok=True)
+    return good_dir, defect_dir, uncategorized_dir
 
 
 @router.get("/training/data-stats")
 async def training_data_stats() -> dict[str, Any]:
-    """Count images in good and defect training folders."""
-    good_dir, defect_dir = _get_training_dirs()
-    exts = {".jpg", ".jpeg", ".png", ".bmp", ".tiff"}
-    good_count = sum(1 for f in good_dir.iterdir() if f.suffix.lower() in exts)
-    defect_count = sum(1 for f in defect_dir.iterdir() if f.suffix.lower() in exts)
+    """Count images in good, defect, and uncategorized training folders."""
+    good_dir, defect_dir, uncategorized_dir = _get_training_dirs()
+    good_count = sum(1 for f in good_dir.iterdir() if f.suffix.lower() in IMAGE_EXTS)
+    defect_count = sum(1 for f in defect_dir.iterdir() if f.suffix.lower() in IMAGE_EXTS)
+    uncategorized_count = sum(
+        1 for f in uncategorized_dir.iterdir() if f.suffix.lower() in IMAGE_EXTS
+    )
     return {
         "good_count": good_count,
         "defect_count": defect_count,
-        "total": good_count + defect_count,
+        "uncategorized_count": uncategorized_count,
+        "total": good_count + defect_count + uncategorized_count,
         "good_path": str(good_dir),
         "defect_path": str(defect_dir),
+        "uncategorized_path": str(uncategorized_dir),
     }
 
 
@@ -57,15 +68,19 @@ async def upload_training_image(
     file: UploadFile,
     category: str = "good",
 ) -> dict[str, str]:
-    """Upload an image to the good or defect training folder."""
-    if category not in ("good", "defect"):
-        raise HTTPException(status_code=400, detail="category must be 'good' or 'defect'")
+    """Upload an image to the good, defect, or uncategorized training folder."""
+    if category not in ("good", "defect", "uncategorized"):
+        raise HTTPException(
+            status_code=400,
+            detail="category must be 'good', 'defect', or 'uncategorized'",
+        )
 
     if not file.filename:
         raise HTTPException(status_code=400, detail="File must have a filename")
 
-    good_dir, defect_dir = _get_training_dirs()
-    target_dir = good_dir if category == "good" else defect_dir
+    good_dir, defect_dir, uncategorized_dir = _get_training_dirs()
+    dir_map = {"good": good_dir, "defect": defect_dir, "uncategorized": uncategorized_dir}
+    target_dir = dir_map[category]
 
     # Sanitize filename
     safe_name = Path(file.filename).name
@@ -105,10 +120,9 @@ async def _run_training() -> None:
         )
 
     try:
-        good_dir, defect_dir = _get_training_dirs()
-        exts = {".jpg", ".jpeg", ".png", ".bmp", ".tiff"}
-        good_files = [f for f in good_dir.iterdir() if f.suffix.lower() in exts]
-        defect_files = [f for f in defect_dir.iterdir() if f.suffix.lower() in exts]
+        good_dir, defect_dir, _ = _get_training_dirs()
+        good_files = [f for f in good_dir.iterdir() if f.suffix.lower() in IMAGE_EXTS]
+        defect_files = [f for f in defect_dir.iterdir() if f.suffix.lower() in IMAGE_EXTS]
 
         if len(good_files) < 5:
             raise ValueError(
@@ -236,3 +250,169 @@ async def download_model() -> Any:
         media_type="application/octet-stream",
         filename="trained_model.onnx",
     )
+
+
+# ---------------------------------------------------------------------------
+# Training image list / re-categorize / serve file
+# ---------------------------------------------------------------------------
+
+
+def _list_training_images(category_filter: str | None = None) -> list[dict[str, Any]]:
+    """List training images from the filesystem with metadata."""
+    good_dir, defect_dir, uncategorized_dir = _get_training_dirs()
+    dirs = {"good": good_dir, "defect": defect_dir, "uncategorized": uncategorized_dir}
+
+    if category_filter and category_filter in dirs:
+        dirs = {category_filter: dirs[category_filter]}
+
+    results: list[dict[str, Any]] = []
+    for category, directory in dirs.items():
+        for f in directory.iterdir():
+            if f.suffix.lower() not in IMAGE_EXTS:
+                continue
+            stat = f.stat()
+            results.append(
+                {
+                    "filename": f.name,
+                    "category": category,
+                    "path": str(f),
+                    "size_bytes": stat.st_size,
+                    "modified_at": datetime.fromtimestamp(
+                        stat.st_mtime, tz=timezone.utc
+                    ).isoformat(),
+                    "thumbnail_url": f"/api/v1/training/images/{category}/{f.name}/file",
+                    "file_url": f"/api/v1/training/images/{category}/{f.name}/file",
+                }
+            )
+    results.sort(key=lambda x: x["modified_at"], reverse=True)
+    return results
+
+
+@router.get("/training/images")
+async def list_training_images(
+    category: str | None = None,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+) -> dict[str, Any]:
+    """List all training images with their category."""
+    images = _list_training_images(category)
+    return {
+        "total": len(images),
+        "images": images[skip : skip + limit],
+    }
+
+
+class RecategorizeRequest(BaseModel):
+    """Request body for re-categorizing a training image."""
+
+    new_category: str
+
+
+@router.patch("/training/images/{filename}")
+async def recategorize_training_image(
+    filename: str,
+    data: RecategorizeRequest,
+) -> dict[str, str]:
+    """Move a training image between good/defect/uncategorized folders."""
+    if data.new_category not in ("good", "defect", "uncategorized"):
+        raise HTTPException(
+            status_code=400,
+            detail="new_category must be 'good', 'defect', or 'uncategorized'",
+        )
+
+    good_dir, defect_dir, uncategorized_dir = _get_training_dirs()
+    dirs = {"good": good_dir, "defect": defect_dir, "uncategorized": uncategorized_dir}
+
+    # Find the file in any category folder
+    source_path: Path | None = None
+    old_category: str | None = None
+    safe_name = Path(filename).name
+    for cat, directory in dirs.items():
+        candidate = directory / safe_name
+        if candidate.is_file():
+            source_path = candidate
+            old_category = cat
+            break
+
+    if source_path is None or old_category is None:
+        raise HTTPException(status_code=404, detail=f"Image '{filename}' not found")
+
+    if old_category == data.new_category:
+        return {
+            "filename": safe_name,
+            "old_category": old_category,
+            "new_category": data.new_category,
+            "status": "unchanged",
+        }
+
+    target_dir = dirs[data.new_category]
+    target_path = target_dir / safe_name
+    if target_path.exists():
+        stem = target_path.stem
+        suffix = target_path.suffix
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")
+        target_path = target_dir / f"{stem}_{ts}{suffix}"
+
+    shutil.move(str(source_path), str(target_path))
+
+    return {
+        "filename": target_path.name,
+        "old_category": old_category,
+        "new_category": data.new_category,
+        "status": "moved",
+    }
+
+
+class BatchRecategorizeRequest(BaseModel):
+    """Request body for batch re-categorizing training images."""
+
+    filenames: list[str]
+    new_category: str
+
+
+@router.patch("/training/images-batch")
+async def batch_recategorize(data: BatchRecategorizeRequest) -> dict[str, Any]:
+    """Batch re-categorize multiple training images."""
+    if data.new_category not in ("good", "defect", "uncategorized"):
+        raise HTTPException(
+            status_code=400,
+            detail="new_category must be 'good', 'defect', or 'uncategorized'",
+        )
+
+    results = []
+    for filename in data.filenames:
+        try:
+            result = await recategorize_training_image(
+                filename, RecategorizeRequest(new_category=data.new_category)
+            )
+            results.append(result)
+        except HTTPException as exc:
+            results.append({"filename": filename, "status": "error", "detail": exc.detail})
+
+    return {"results": results}
+
+
+@router.get("/training/images/{category}/{filename}/file")
+async def serve_training_image(category: str, filename: str) -> FileResponse:
+    """Serve a training image file."""
+    if category not in ("good", "defect", "uncategorized"):
+        raise HTTPException(status_code=400, detail="Invalid category")
+
+    good_dir, defect_dir, uncategorized_dir = _get_training_dirs()
+    dirs = {"good": good_dir, "defect": defect_dir, "uncategorized": uncategorized_dir}
+
+    safe_name = Path(filename).name
+    file_path = dirs[category] / safe_name
+
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    suffix = file_path.suffix.lower()
+    media_types = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".bmp": "image/bmp",
+        ".tiff": "image/tiff",
+    }
+    return FileResponse(str(file_path), media_type=media_types.get(suffix, "image/jpeg"))

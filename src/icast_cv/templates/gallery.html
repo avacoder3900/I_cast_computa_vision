@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% set active = "gallery" %}
+{% block title %}Photo Gallery{% endblock %}
+
+{% block content %}
+<h2>Photo Gallery</h2>
+
+<div class="stats-grid">
+    <div class="stat-card pass">
+        <div class="stat-value" id="good-count">--</div>
+        <div class="stat-label">Good</div>
+    </div>
+    <div class="stat-card fail">
+        <div class="stat-value" id="defect-count">--</div>
+        <div class="stat-label">Defect</div>
+    </div>
+    <div class="stat-card pending">
+        <div class="stat-value" id="uncategorized-count">--</div>
+        <div class="stat-label">Uncategorized</div>
+    </div>
+    <div class="stat-card info">
+        <div class="stat-value" id="inspection-count">--</div>
+        <div class="stat-label">Inspection</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="filter-bar">
+        <label>
+            Source
+            <select id="filter-source">
+                <option value="">All Sources</option>
+                <option value="training">Training</option>
+                <option value="inspection">Inspection</option>
+            </select>
+        </label>
+        <label>
+            Category
+            <select id="filter-category">
+                <option value="">All Categories</option>
+                <option value="good">Good</option>
+                <option value="defect">Defect</option>
+                <option value="uncategorized">Uncategorized</option>
+                <option value="inspection">Inspection</option>
+            </select>
+        </label>
+        <label>
+            <span>&nbsp;</span>
+            <button id="filter-btn" class="secondary">Filter</button>
+        </label>
+    </div>
+
+    <!-- Batch actions -->
+    <div class="batch-bar" id="batch-bar">
+        <label class="batch-select-all">
+            <input type="checkbox" id="select-all-cb"> Select All
+        </label>
+        <span id="selected-count">0 selected</span>
+        <select id="batch-category">
+            <option value="good">Good</option>
+            <option value="defect">Defect</option>
+            <option value="uncategorized">Uncategorized</option>
+        </select>
+        <button id="batch-recategorize-btn" class="secondary" disabled>Batch Re-categorize</button>
+    </div>
+
+    <div id="gallery-grid" class="gallery">
+        <div class="empty-state">
+            <p>Loading images...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox overlay -->
+<div class="lightbox-overlay" id="lightbox" style="display:none;">
+    <div class="lightbox-content">
+        <button class="lightbox-close" id="lightbox-close">&times;</button>
+        <img id="lightbox-img" src="" alt="Full size">
+        <div class="lightbox-info">
+            <h4 id="lightbox-filename"></h4>
+            <p id="lightbox-meta"></p>
+            <div class="lightbox-controls">
+                <label>
+                    Category
+                    <select id="lightbox-category">
+                        <option value="good">Good</option>
+                        <option value="defect">Defect</option>
+                        <option value="uncategorized">Uncategorized</option>
+                    </select>
+                </label>
+                <label>
+                    Tags
+                    <input type="text" id="lightbox-tags" placeholder="comma-separated tags">
+                </label>
+                <button id="lightbox-save">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/gallery.js"></script>
+{% endblock %}

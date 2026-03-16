@@ -15,6 +15,7 @@ from icast_cv.routers import (
     cameras,
     capture,
     dashboard,
+    gallery,
     health,
     images,
     inspections,
@@ -93,6 +94,9 @@ def create_app() -> FastAPI:
     )
     application.include_router(
         dashboard.router, prefix="/api/v1", dependencies=api_deps
+    )
+    application.include_router(
+        gallery.router, prefix="/api/v1", dependencies=api_deps
     )
 
     return application

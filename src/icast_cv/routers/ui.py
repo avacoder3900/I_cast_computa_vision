@@ -59,6 +59,12 @@ async def inspections_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("inspections.html", {"request": request})
 
 
+@router.get("/ui/gallery", response_class=HTMLResponse)
+async def gallery_page(request: Request) -> HTMLResponse:
+    """Photo Gallery page."""
+    return templates.TemplateResponse("gallery.html", {"request": request})
+
+
 @router.get("/ui/cartridge/{cartridge_id}", response_class=HTMLResponse)
 async def cartridge_page(request: Request, cartridge_id: str) -> HTMLResponse:
     """Cartridge detail view page."""
