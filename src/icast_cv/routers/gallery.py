@@ -18,6 +18,7 @@ DB = Annotated[AsyncIOMotorDatabase, Depends(get_database)]
 async def gallery_all(
     db: DB,
     source: str | None = None,
+    project_id: str | None = None,
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=200),
 ) -> dict[str, Any]:
@@ -42,7 +43,7 @@ async def gallery_all(
     # Inspection/captured images (MongoDB-based)
     if source is None or source == "inspection":
         try:
-            db_images = await list_images(db, skip=0, limit=200)
+            db_images = await list_images(db, skip=0, limit=200, project_id=project_id)
             for img in db_images:
                 d = img.model_dump()
                 tags = []

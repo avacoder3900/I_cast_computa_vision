@@ -23,12 +23,14 @@ async def list_images_endpoint(
     db: DB,
     sample_id: str | None = None,
     cartridge_id: str | None = None,
+    project_id: str | None = None,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> list[dict[str, Any]]:
-    """List images with optional sample_id/cartridge_id filter and pagination."""
+    """List images with optional sample_id/cartridge_id/project_id filter and pagination."""
     images = await list_images(
-        db, sample_id=sample_id, cartridge_id=cartridge_id, skip=skip, limit=limit
+        db, sample_id=sample_id, cartridge_id=cartridge_id, project_id=project_id,
+        skip=skip, limit=limit,
     )
     return [img.model_dump() for img in images]
 
