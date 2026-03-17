@@ -1,19 +1,26 @@
 """Project CRUD endpoints + project-scoped training, images, inspections."""
 
+import asyncio
 import logging
+import random
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
+from bson import ObjectId
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
 
 from icast_cv.config import get_settings
-from icast_cv.crud.image_crud import label_image, list_images
-from icast_cv.crud.inspection_crud import list_all_inspections
+from icast_cv.crud.image_crud import create_image, label_image, list_images
+from icast_cv.crud.inspection_crud import (
+    create_inspection,
+    list_all_inspections,
+    update_inspection_result,
+)
 from icast_cv.crud.project_crud import (
     create_project,
     delete_project,
@@ -24,6 +31,8 @@ from icast_cv.crud.project_crud import (
 )
 from icast_cv.db import get_database
 from icast_cv.exceptions import NotFoundError
+from icast_cv.models.image import ImageCreate
+from icast_cv.models.inspection import InspectionCreate, InspectionResult
 from icast_cv.models.project import (
     BIMS_PHASE_LABELS,
     ProjectCreate,
@@ -37,6 +46,24 @@ logger = logging.getLogger(__name__)
 DB = Annotated[AsyncIOMotorDatabase, Depends(get_database)]  # type: ignore[type-arg]
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".gif", ".webp"}
+
+# Per-project training state (in-memory, single process)
+_project_training_state: dict[str, dict[str, Any]] = {}
+
+
+def _get_project_training_state(project_id: str) -> dict[str, Any]:
+    """Get or create training state for a project."""
+    if project_id not in _project_training_state:
+        _project_training_state[project_id] = {
+            "status": "idle",
+            "progress": 0,
+            "message": "",
+            "started_at": None,
+            "completed_at": None,
+            "model_path": None,
+            "logs": [],
+        }
+    return _project_training_state[project_id]
 
 
 # ---------------------------------------------------------------------------
@@ -254,7 +281,7 @@ async def label_project_image(
     rejected = await db.images.count_documents({"project_id": project_id, "label": "rejected"})
     total = await db.images.count_documents({"project_id": project_id})
     await db.projects.update_one(
-        {"_id": __import__("bson").ObjectId(project_id)},
+        {"_id": ObjectId(project_id)},
         {"$set": {
             "annotated_count": approved + rejected,
             "image_count": total,
@@ -443,4 +470,234 @@ async def list_project_inspections(
     return {
         "total": len(inspections),
         "inspections": [i.model_dump() for i in inspections],
+    }
+
+
+class ReviewRequest(BaseModel):
+    """Request body for reviewing (approving/rejecting) an inspection."""
+    result: str
+
+
+@router.patch("/projects/{project_id}/inspections/{inspection_id}/review")
+async def review_project_inspection(
+    project_id: str,
+    inspection_id: str,
+    data: ReviewRequest,
+    db: DB,
+) -> dict[str, Any]:
+    """Approve or reject an inspection result (human review override)."""
+    if data.result not in ("pass", "fail"):
+        raise HTTPException(status_code=400, detail="result must be 'pass' or 'fail'")
+    result_data = InspectionResult(
+        result=data.result,
+        confidence_score=1.0,
+        model_version="human-review",
+    )
+    try:
+        inspection = await update_inspection_result(db, inspection_id, result_data)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return inspection.model_dump()
+
+
+# ---------------------------------------------------------------------------
+# Project-scoped training start / status
+# ---------------------------------------------------------------------------
+
+async def _run_project_training(project_id: str, db: AsyncIOMotorDatabase) -> None:  # type: ignore[type-arg]
+    """Background training task for a project."""
+    state = _get_project_training_state(project_id)
+    state["status"] = "running"
+    state["progress"] = 0
+    state["logs"] = []
+
+    def _log(msg: str) -> None:
+        logger.info(msg)
+        state["logs"].append(
+            f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] {msg}"
+        )
+
+    try:
+        good_dir, defect_dir, _ = _get_project_training_dirs(project_id)
+        good_files = [f for f in good_dir.iterdir() if f.suffix.lower() in IMAGE_EXTS]
+        defect_files = [f for f in defect_dir.iterdir() if f.suffix.lower() in IMAGE_EXTS]
+
+        if len(good_files) < 2:
+            raise ValueError(
+                f"Need at least 2 approved images for training, found {len(good_files)}"
+            )
+
+        _log(f"Found {len(good_files)} approved, {len(defect_files)} rejected images")
+        state["progress"] = 10
+
+        # Simulated training steps
+        steps = [
+            (20, "Loading and preprocessing images..."),
+            (40, "Training feature extractor..."),
+            (60, "Computing anomaly scores..."),
+            (80, "Validating model..."),
+            (95, "Saving model weights..."),
+        ]
+
+        for progress, msg in steps:
+            await asyncio.sleep(2)
+            _log(msg)
+            state["progress"] = progress
+
+        model_path = _get_project_model_path(project_id)
+        model_path.parent.mkdir(parents=True, exist_ok=True)
+        model_path.write_bytes(b"SIMULATED_MODEL")
+        state["model_path"] = str(model_path)
+
+        await asyncio.sleep(1)
+        state["progress"] = 100
+        _log("Training complete (simulated — install anomalib for real training)")
+        state["status"] = "complete"
+        state["completed_at"] = datetime.now(timezone.utc).isoformat()
+
+        # Update project model status
+        version = f"v{datetime.now(timezone.utc).strftime('%Y%m%d%H%M')}"
+        await db.projects.update_one(
+            {"_id": ObjectId(project_id)},
+            {"$set": {
+                "model_status": "trained",
+                "model_version": version,
+                "updated_at": datetime.now(timezone.utc),
+            }},
+        )
+        _log(f"Model version: {version}")
+
+    except Exception as exc:
+        state["status"] = "failed"
+        state["message"] = str(exc)
+        state["completed_at"] = datetime.now(timezone.utc).isoformat()
+        _log(f"Training failed: {exc}")
+        logger.exception("Project training failed for %s", project_id)
+
+        await db.projects.update_one(
+            {"_id": ObjectId(project_id)},
+            {"$set": {
+                "model_status": "failed",
+                "updated_at": datetime.now(timezone.utc),
+            }},
+        )
+
+
+@router.post("/projects/{project_id}/training/start")
+async def start_project_training(
+    project_id: str,
+    db: DB,
+    background_tasks: BackgroundTasks,
+) -> dict[str, str]:
+    """Kick off training for a specific project."""
+    try:
+        await get_project(db, project_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    state = _get_project_training_state(project_id)
+    if state["status"] == "running":
+        raise HTTPException(status_code=409, detail="Training is already running")
+
+    state["status"] = "starting"
+    state["progress"] = 0
+    state["message"] = ""
+    state["started_at"] = datetime.now(timezone.utc).isoformat()
+    state["completed_at"] = None
+    state["model_path"] = None
+    state["logs"] = []
+
+    # Update project status to training
+    await db.projects.update_one(
+        {"_id": ObjectId(project_id)},
+        {"$set": {"model_status": "training", "updated_at": datetime.now(timezone.utc)}},
+    )
+
+    background_tasks.add_task(_run_project_training, project_id, db)
+    return {"status": "started"}
+
+
+@router.get("/projects/{project_id}/training/status")
+async def project_training_status_endpoint(project_id: str) -> dict[str, Any]:
+    """Get training status for a specific project."""
+    return dict(_get_project_training_state(project_id))
+
+
+# ---------------------------------------------------------------------------
+# Project-scoped test / invoke
+# ---------------------------------------------------------------------------
+
+@router.post("/projects/{project_id}/test/invoke")
+async def invoke_project_test(
+    project_id: str,
+    file: UploadFile,
+    db: DB,
+) -> dict[str, Any]:
+    """Upload a test image, run inference (simulated), return pass/fail + confidence."""
+    try:
+        project = await get_project(db, project_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="File must have a filename")
+
+    # Save test image under image_storage_path so /images/{id}/file can serve it
+    settings = get_settings()
+    test_dir = settings.image_storage_path / "test" / project_id
+    test_dir.mkdir(parents=True, exist_ok=True)
+
+    safe_name = Path(file.filename).name
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")
+    target_name = f"{Path(safe_name).stem}_{ts}{Path(safe_name).suffix}"
+    target_path = test_dir / target_name
+
+    content = await file.read()
+    target_path.write_bytes(content)
+
+    # Create image record (file_path relative to image_storage_path)
+    relative_path = f"test/{project_id}/{target_name}"
+    image_data = ImageCreate(
+        sample_id="test",
+        project_id=project_id,
+        filename=target_name,
+        file_path=relative_path,
+        thumbnail_path=relative_path,
+        width=0,
+        height=0,
+        file_size_bytes=len(content),
+        camera_index=-1,
+        captured_at=datetime.now(timezone.utc),
+    )
+    image = await create_image(db, image_data)
+
+    # Simulate inference
+    confidence = round(random.uniform(0.55, 0.99), 3)
+    result = "pass" if confidence > 0.70 else "fail"
+
+    # Create and complete inspection record
+    insp_data = InspectionCreate(
+        sample_id="test",
+        image_id=image.id,
+        project_id=project_id,
+        inspection_type="binary_classification",
+    )
+    inspection = await create_inspection(db, insp_data)
+
+    insp_result = InspectionResult(
+        result=result,
+        confidence_score=confidence,
+        model_version=project.model_version or "simulated-v1",
+        processing_time_ms=random.randint(50, 500),
+    )
+    inspection = await update_inspection_result(db, inspection.id, insp_result)
+
+    return {
+        "inspection_id": inspection.id,
+        "image_id": image.id,
+        "result": result,
+        "confidence_score": confidence,
+        "model_version": project.model_version or "simulated-v1",
+        "processing_time_ms": inspection.processing_time_ms,
+        "image_url": f"/api/v1/images/{image.id}/file",
     }

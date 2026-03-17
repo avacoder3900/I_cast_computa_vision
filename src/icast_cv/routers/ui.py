@@ -40,7 +40,7 @@ async def project_detail(request: Request, project_id: str, db: DB) -> HTMLRespo
         )
     return templates.TemplateResponse(
         "project_detail.html",
-        {"request": request, "project": project.model_dump()},
+        {"request": request, "project": project.model_dump(mode="json")},
     )
 
 

@@ -71,11 +71,11 @@ function updateSidebar(stats) {
     document.getElementById('accuracy-bar').style.width = accuracy + '%';
 
     const appPct = total > 0 ? (approved / total * 100) : 0;
-    document.getElementById('stat-approved').textContent = `${approved}`;
+    document.getElementById('stat-approved').textContent = `${approved} (${appPct.toFixed(0)}%)`;
     document.getElementById('approved-bar').style.width = appPct + '%';
 
     const rejPct = total > 0 ? (rejected / total * 100) : 0;
-    document.getElementById('stat-rejected').textContent = `${rejected}`;
+    document.getElementById('stat-rejected').textContent = `${rejected} (${rejPct.toFixed(0)}%)`;
     document.getElementById('rejected-bar').style.width = rejPct + '%';
 
     document.getElementById('stat-model-status').textContent = stats.model_status || 'untrained';
@@ -346,7 +346,7 @@ async function startProjectTraining() {
     progressSection.style.display = 'block';
 
     try {
-        await API.post('/api/v1/training/start');
+        await API.post(`/api/v1/projects/${PROJECT_ID}/training/start`);
         pollTrainingStatus();
     } catch (err) {
         showToast('Failed to start training: ' + err.message, true);
@@ -362,7 +362,7 @@ async function pollTrainingStatus() {
     const log = document.getElementById('train-log');
 
     try {
-        const status = await API.get('/api/v1/training/status');
+        const status = await API.get(`/api/v1/projects/${PROJECT_ID}/training/status`);
         bar.style.width = (status.progress || 0) + '%';
         bar.textContent = (status.progress || 0) + '%';
         text.textContent = status.message || status.status;
@@ -424,22 +424,26 @@ async function invokeTest() {
     const results = document.getElementById('test-results');
     results.innerHTML = '<h4>RESULTS</h4><p>Running inference...</p>';
 
-    // For now, simulate — real inference would call the project's model endpoint
-    setTimeout(() => {
-        const confidence = (Math.random() * 0.4 + 0.6).toFixed(3);
-        const result = Math.random() > 0.5 ? 'pass' : 'fail';
-        const resultColor = result === 'pass' ? '#4caf50' : '#f44336';
+    const fd = new FormData();
+    fd.append('file', testFile);
+
+    try {
+        const data = await API.upload(`/api/v1/projects/${PROJECT_ID}/test/invoke`, fd);
+        const resultColor = data.result === 'pass' ? '#4caf50' : '#f44336';
         results.innerHTML = `
             <h4>RESULTS</h4>
             <div class="test-result-card">
                 <div style="display:flex;align-items:center;gap:1rem;">
-                    <span class="badge badge-${result}" style="font-size:1rem;padding:0.3rem 0.8rem;">${result.toUpperCase()}</span>
-                    <span style="font-size:1.2rem;font-weight:600;color:${resultColor};">${(confidence * 100).toFixed(1)}% confidence</span>
+                    <span class="badge badge-${data.result}" style="font-size:1rem;padding:0.3rem 0.8rem;">${data.result.toUpperCase()}</span>
+                    <span style="font-size:1.2rem;font-weight:600;color:${resultColor};">${(data.confidence_score * 100).toFixed(1)}% confidence</span>
                 </div>
-                <p class="text-muted" style="margin-top:0.75rem;">Model: ${PROJECT_DATA.model_version || 'simulated'} | Project: ${PROJECT_DATA.name}</p>
+                <p class="text-muted" style="margin-top:0.75rem;">Model: ${data.model_version} | Processing: ${data.processing_time_ms}ms</p>
             </div>
         `;
-    }, 1500);
+        loadStats();
+    } catch (err) {
+        results.innerHTML = `<h4>RESULTS</h4><div class="test-result-card"><p style="color:#f44336;">Error: ${err.message}</p></div>`;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -473,19 +477,35 @@ function renderReviewGallery(inspections) {
                 ? '<span class="badge badge-fail">FAIL</span>'
                 : '<span class="badge badge-pending">' + insp.status + '</span>';
         const confidence = insp.confidence_score != null ? (insp.confidence_score * 100).toFixed(1) + '%' : '--';
+        const imageUrl = insp.image_id ? `/api/v1/images/${insp.image_id}/file` : '';
         return `
-            <div class="gallery-item">
+            <div class="gallery-item review-item">
+                ${imageUrl ? `<img src="${imageUrl}" alt="Inspection image" loading="lazy">` : '<div class="review-no-image">No image</div>'}
                 <div class="caption" style="padding:0.75rem;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
                         ${resultBadge}
                         <span style="font-size:0.8rem;font-weight:600;">${confidence}</span>
                     </div>
-                    <div class="caption-filename">${insp.id.substring(0, 12)}...</div>
                     <div class="caption-date">${formatDate(insp.created_at)}</div>
+                    <div class="review-actions">
+                        <button class="btn-review-approve ${insp.result === 'pass' ? 'active' : ''}" onclick="reviewInspection('${insp.id}', 'pass')">Approve</button>
+                        <button class="btn-review-reject ${insp.result === 'fail' ? 'active' : ''}" onclick="reviewInspection('${insp.id}', 'fail')">Reject</button>
+                    </div>
                 </div>
             </div>
         `;
     }).join('');
+}
+
+async function reviewInspection(inspectionId, result) {
+    try {
+        await API.patch(`/api/v1/projects/${PROJECT_ID}/inspections/${inspectionId}/review`, { result });
+        showToast(result === 'pass' ? 'Inspection approved' : 'Inspection rejected');
+        loadReviewImages();
+        loadStats();
+    } catch (err) {
+        showToast('Failed to update inspection: ' + err.message, true);
+    }
 }
 
 // ---------------------------------------------------------------------------

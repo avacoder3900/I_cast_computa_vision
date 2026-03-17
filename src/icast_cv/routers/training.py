@@ -16,7 +16,7 @@ from icast_cv.config import get_settings
 router = APIRouter(tags=["training"])
 logger = logging.getLogger(__name__)
 
-IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff"}
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".gif", ".webp"}
 
 # In-memory training state (single-process)
 _training_state: dict[str, Any] = {

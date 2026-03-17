@@ -1206,6 +1206,13 @@ footer {
     border-radius: 1rem;
     font-size: 0.75rem;
     color: var(--pico-muted-color);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.phase-label-chip:hover {
+    border-color: rgba(99, 102, 241, 0.5);
+    color: rgba(99, 102, 241, 0.8);
 }
 
 .phase-label-chip.active {
@@ -1455,4 +1462,61 @@ footer {
 .gallery-item-label.defect {
     background: rgba(244, 67, 54, 0.9);
     color: white;
+}
+
+/* Review tab */
+.review-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.btn-review-approve,
+.btn-review-reject {
+    flex: 1;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    cursor: pointer;
+    background: none;
+    color: var(--pico-muted-color);
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    margin: 0;
+}
+
+.btn-review-approve:hover {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: #4caf50;
+    color: #4caf50;
+}
+
+.btn-review-reject:hover {
+    background: rgba(244, 67, 54, 0.15);
+    border-color: #f44336;
+    color: #f44336;
+}
+
+.btn-review-approve.active {
+    background: rgba(76, 175, 80, 0.2);
+    border-color: #4caf50;
+    color: #4caf50;
+}
+
+.btn-review-reject.active {
+    background: rgba(244, 67, 54, 0.2);
+    border-color: #f44336;
+    color: #f44336;
+}
+
+.review-no-image {
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--pico-muted-color);
+    font-size: 0.8rem;
 }
