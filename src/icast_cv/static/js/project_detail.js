@@ -68,7 +68,9 @@ function updateSidebar(stats) {
     document.getElementById('annotations-bar').style.width = annPct + '%';
 
     document.getElementById('stat-accuracy').textContent = accuracy + '%';
-    document.getElementById('accuracy-bar').style.width = accuracy + '%';
+    const accuracyBar = document.getElementById('accuracy-bar');
+    accuracyBar.style.width = accuracy + '%';
+    accuracyBar.className = `stat-bar-fill ${accuracy >= 50 ? 'green' : 'red'}`;
 
     const appPct = total > 0 ? (approved / total * 100) : 0;
     document.getElementById('stat-approved').textContent = `${approved} (${appPct.toFixed(0)}%)`;

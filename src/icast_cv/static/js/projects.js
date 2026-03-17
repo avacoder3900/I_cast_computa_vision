@@ -151,7 +151,49 @@ function showContextMenu(event, projectId) {
 
 async function editProject() {
     if (!contextMenuProjectId) return;
-    goToProject(contextMenuProjectId);
+    try {
+        const project = await API.get(`/api/v1/projects/${contextMenuProjectId}`);
+        document.getElementById('edit-project-name').value = project.name;
+        document.getElementById('edit-project-description').value = project.description || '';
+        document.getElementById('edit-project-type').value = project.project_type;
+        document.getElementById('edit-project-tags').value = (project.tags || []).join(', ');
+        document.getElementById('edit-project-modal').style.display = 'flex';
+    } catch (err) {
+        showToast('Failed to load project: ' + err.message, true);
+    }
+}
+
+function closeEditProjectModal() {
+    document.getElementById('edit-project-modal').style.display = 'none';
+}
+
+function closeEditModalOnOverlay(event) {
+    if (event.target === event.currentTarget) closeEditProjectModal();
+}
+
+async function saveEditProject(event) {
+    event.preventDefault();
+    if (!contextMenuProjectId) return;
+
+    const name = document.getElementById('edit-project-name').value.trim();
+    const description = document.getElementById('edit-project-description').value.trim();
+    const projectType = document.getElementById('edit-project-type').value;
+    const tagsStr = document.getElementById('edit-project-tags').value.trim();
+    const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+    try {
+        await API.patch(`/api/v1/projects/${contextMenuProjectId}`, {
+            name,
+            description,
+            project_type: projectType,
+            tags,
+        });
+        closeEditProjectModal();
+        showToast('Project updated');
+        loadProjects();
+    } catch (err) {
+        showToast('Failed to update project: ' + err.message, true);
+    }
 }
 
 async function duplicateProject() {

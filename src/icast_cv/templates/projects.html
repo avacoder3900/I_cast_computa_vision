@@ -81,6 +81,38 @@
     <button onclick="duplicateProject()">Duplicate</button>
     <button onclick="deleteProject()" class="danger">Delete</button>
 </div>
+
+<!-- Edit Project Modal -->
+<div class="modal-overlay" id="edit-project-modal" style="display:none;" onclick="closeEditModalOnOverlay(event)">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit Project</h3>
+            <button class="modal-close" onclick="closeEditProjectModal()">&times;</button>
+        </div>
+        <form id="edit-project-form" onsubmit="saveEditProject(event)">
+            <label for="edit-project-name">Project Name *</label>
+            <input type="text" id="edit-project-name" required minlength="1" maxlength="255">
+
+            <label for="edit-project-description">Description</label>
+            <textarea id="edit-project-description" rows="3"></textarea>
+
+            <label for="edit-project-type">Project Type</label>
+            <select id="edit-project-type">
+                <option value="classification">Classification</option>
+                <option value="anomaly_detection">Anomaly Detection</option>
+                <option value="object_detection">Object Detection</option>
+            </select>
+
+            <label for="edit-project-tags">Tags (comma-separated)</label>
+            <input type="text" id="edit-project-tags">
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeEditProjectModal()">Cancel</button>
+                <button type="submit" class="btn-create">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
