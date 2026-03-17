@@ -16,6 +16,7 @@ def _doc_to_image(doc: dict[str, Any]) -> ImageInDB:
     return ImageInDB(
         id=str(doc["_id"]),
         sample_id=doc["sample_id"],
+        project_id=doc.get("project_id", ""),
         filename=doc["filename"],
         file_path=doc["file_path"],
         thumbnail_path=doc["thumbnail_path"],
@@ -27,6 +28,7 @@ def _doc_to_image(doc: dict[str, Any]) -> ImageInDB:
         captured_at=doc["captured_at"],
         image_url=doc.get("image_url", ""),
         cartridge_tag=tag,
+        label=doc.get("label"),
     )
 
 
@@ -58,15 +60,18 @@ async def list_images(
     db: AsyncIOMotorDatabase,  # type: ignore[type-arg]
     sample_id: str | None = None,
     cartridge_id: str | None = None,
+    project_id: str | None = None,
     skip: int = 0,
     limit: int = 50,
 ) -> list[ImageInDB]:
-    """List images with optional sample_id/cartridge_id filter and pagination."""
+    """List images with optional sample_id/cartridge_id/project_id filter and pagination."""
     query: dict[str, Any] = {}
     if sample_id is not None:
         query["sample_id"] = sample_id
     if cartridge_id is not None:
         query["cartridge_tag.cartridge_record_id"] = cartridge_id
+    if project_id is not None:
+        query["project_id"] = project_id
     cursor = db.images.find(query).skip(skip).limit(limit).sort("captured_at", -1)
     docs: list[dict[str, Any]] = await cursor.to_list(length=limit)
     return [_doc_to_image(d) for d in docs]
@@ -83,6 +88,26 @@ async def tag_image(
     doc = await db.images.find_one_and_update(
         {"_id": ObjectId(image_id)},
         {"$set": {"cartridge_tag": tag.model_dump()}},
+        return_document=True,
+    )
+    if doc is None:
+        raise NotFoundError(f"Image {image_id} not found")
+    return _doc_to_image(doc)
+
+
+async def label_image(
+    db: AsyncIOMotorDatabase,  # type: ignore[type-arg]
+    image_id: str,
+    label: str,
+) -> ImageInDB:
+    """Set the binary label (approved/rejected) on an image."""
+    if label not in ("approved", "rejected"):
+        raise ValueError("label must be 'approved' or 'rejected'")
+    if not ObjectId.is_valid(image_id):
+        raise NotFoundError(f"Image {image_id} not found")
+    doc = await db.images.find_one_and_update(
+        {"_id": ObjectId(image_id)},
+        {"$set": {"label": label}},
         return_document=True,
     )
     if doc is None:

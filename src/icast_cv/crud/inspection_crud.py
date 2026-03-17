@@ -20,6 +20,7 @@ def _doc_to_inspection(doc: dict[str, Any]) -> InspectionInDB:
         id=str(doc["_id"]),
         sample_id=doc["sample_id"],
         image_id=doc["image_id"],
+        project_id=doc.get("project_id", ""),
         inspection_type=doc["inspection_type"],
         status=doc["status"],
         result=doc.get("result"),
@@ -43,6 +44,7 @@ async def create_inspection(
     doc: dict[str, Any] = {
         "sample_id": data.sample_id,
         "image_id": data.image_id,
+        "project_id": data.project_id,
         "inspection_type": data.inspection_type,
         "status": "pending",
         "result": None,
@@ -79,6 +81,7 @@ async def list_all_inspections(
     cartridge_id: str | None = None,
     phase: str | None = None,
     result: str | None = None,
+    project_id: str | None = None,
     skip: int = 0,
     limit: int = 50,
 ) -> list[InspectionInDB]:
@@ -92,6 +95,8 @@ async def list_all_inspections(
         query["phase"] = phase
     if result is not None:
         query["result"] = result
+    if project_id is not None:
+        query["project_id"] = project_id
     cursor = (
         db.inspections.find(query)
         .skip(skip)

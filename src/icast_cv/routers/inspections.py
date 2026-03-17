@@ -55,6 +55,7 @@ async def list_inspections_endpoint(
     cartridge_id: str | None = None,
     phase: str | None = None,
     result: str | None = None,
+    project_id: str | None = None,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> list[dict[str, Any]]:
@@ -65,6 +66,7 @@ async def list_inspections_endpoint(
         cartridge_id=cartridge_id,
         phase=phase,
         result=result,
+        project_id=project_id,
         skip=skip,
         limit=limit,
     )

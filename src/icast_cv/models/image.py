@@ -24,6 +24,7 @@ class ImageCreate(BaseModel):
     """Internal model for creating an image document (not an API request body)."""
 
     sample_id: str
+    project_id: str = ""
     filename: str
     file_path: str
     thumbnail_path: str
@@ -35,6 +36,7 @@ class ImageCreate(BaseModel):
     captured_at: datetime
     image_url: str = ""
     cartridge_tag: CartridgeTag | None = None
+    label: str | None = None  # "approved" | "rejected" | None (unlabeled)
 
 
 class ImageInDB(BaseModel):
@@ -42,6 +44,7 @@ class ImageInDB(BaseModel):
 
     id: str
     sample_id: str
+    project_id: str = ""
     filename: str
     file_path: str
     thumbnail_path: str
@@ -53,6 +56,7 @@ class ImageInDB(BaseModel):
     captured_at: datetime
     image_url: str = ""
     cartridge_tag: CartridgeTag | None = None
+    label: str | None = None
 
 
 class ImageResponse(BaseModel):
@@ -60,6 +64,7 @@ class ImageResponse(BaseModel):
 
     id: str
     sample_id: str
+    project_id: str = ""
     filename: str
     file_path: str
     thumbnail_path: str
@@ -71,3 +76,4 @@ class ImageResponse(BaseModel):
     captured_at: datetime
     image_url: str = ""
     cartridge_tag: CartridgeTag | None = None
+    label: str | None = None

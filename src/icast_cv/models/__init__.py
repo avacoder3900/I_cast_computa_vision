@@ -7,6 +7,12 @@ from icast_cv.models.inspection import (
     InspectionResponse,
     InspectionResult,
 )
+from icast_cv.models.project import (
+    ProjectCreate,
+    ProjectInDB,
+    ProjectResponse,
+    ProjectUpdate,
+)
 from icast_cv.models.sample import (
     SampleCreate,
     SampleInDB,
@@ -23,6 +29,10 @@ __all__ = [
     "InspectionInDB",
     "InspectionResponse",
     "InspectionResult",
+    "ProjectCreate",
+    "ProjectInDB",
+    "ProjectResponse",
+    "ProjectUpdate",
     "SampleCreate",
     "SampleInDB",
     "SampleResponse",
