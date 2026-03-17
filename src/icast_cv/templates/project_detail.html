@@ -165,7 +165,7 @@
                 <h3>Test Model</h3>
                 <div class="test-section">
                     <h4>INPUT DATA</h4>
-                    <div class="upload-zone-large" id="test-dropzone" onclick="document.getElementById('test-file-input').click()">
+                    <div class="upload-zone-large" id="test-dropzone" onclick="var el=document.getElementById('test-file-input'); if(el) el.click();">
                         <input type="file" id="test-file-input" accept="image/*" style="display:none" onchange="handleTestFile(this.files[0])">
                         <div class="upload-icon">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -202,9 +202,12 @@
             <div class="tab-panel" id="tab-integrate">
                 <h3>API Integration</h3>
                 <div class="integrate-section">
-                    <h4>Project API Endpoint</h4>
-                    <div class="code-block">
+                    <h4>Project API Endpoints</h4>
+                    <div class="code-block" style="display:flex;flex-direction:column;gap:0.25rem;">
                         <code>POST /api/v1/projects/{{ project.id }}/training/upload</code>
+                        <code>POST /api/v1/projects/{{ project.id }}/test/invoke</code>
+                        <code>GET  /api/v1/projects/{{ project.id }}/stats</code>
+                        <code>GET  /api/v1/projects/{{ project.id }}/inspections</code>
                     </div>
 
                     <h4>Python</h4>
@@ -213,6 +216,7 @@
 API_URL = "{{ request.url.scheme }}://{{ request.url.netloc }}"
 PROJECT_ID = "{{ project.id }}"
 API_KEY = "your-api-key"
+HEADERS = {"X-API-Key": API_KEY}
 
 # Upload training image
 with open("image.jpg", "rb") as f:
@@ -220,14 +224,24 @@ with open("image.jpg", "rb") as f:
         f"{API_URL}/api/v1/projects/{PROJECT_ID}/training/upload",
         files={"file": f},
         data={"category": "good"},
-        headers={"X-API-Key": API_KEY},
+        headers=HEADERS,
     )
 print(resp.json())
+
+# Run inference on an image
+with open("test.jpg", "rb") as f:
+    resp = requests.post(
+        f"{API_URL}/api/v1/projects/{PROJECT_ID}/test/invoke",
+        files={"file": f},
+        headers=HEADERS,
+    )
+result = resp.json()
+print(f"{result['result']} — {result['confidence_score']*100:.1f}%")
 
 # Get project stats
 resp = requests.get(
     f"{API_URL}/api/v1/projects/{PROJECT_ID}/stats",
-    headers={"X-API-Key": API_KEY},
+    headers=HEADERS,
 )
 print(resp.json())</code></pre>
 
@@ -237,6 +251,11 @@ curl -X POST "{{ request.url.scheme }}://{{ request.url.netloc }}/api/v1/project
   -H "X-API-Key: your-api-key" \
   -F "file=@image.jpg" \
   -F "category=good"
+
+# Run inference
+curl -X POST "{{ request.url.scheme }}://{{ request.url.netloc }}/api/v1/projects/{{ project.id }}/test/invoke" \
+  -H "X-API-Key: your-api-key" \
+  -F "file=@test.jpg"
 
 # Get project stats
 curl "{{ request.url.scheme }}://{{ request.url.netloc }}/api/v1/projects/{{ project.id }}/stats" \
