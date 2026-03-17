@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% set active = "projects" %}
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="project-detail-page" data-project-id="{{ project.id }}">
+    <!-- Breadcrumb -->
+    <div class="project-breadcrumb">
+        <a href="/ui/">Projects</a> <span class="sep">/</span> <span class="current">{{ project.name }}</span>
+    </div>
+
+    <!-- Project header -->
+    <div class="project-detail-header">
+        <div>
+            <h2>{{ project.name }}</h2>
+            <p class="project-type-label">{{ project.project_type | replace("_", " ") | upper }}</p>
+            {% if project.description %}
+            <p class="project-description">{{ project.description }}</p>
+            {% endif %}
+        </div>
+        <div class="project-id-copy">
+            <code id="project-id-text">{{ project.id }}</code>
+            <button class="copy-btn" onclick="copyProjectId()" title="Copy ID">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Tab navigation -->
+    <div class="project-tabs">
+        <button class="tab-btn active" data-tab="import" onclick="switchTab('import')">Import</button>
+        <button class="tab-btn" data-tab="labels" onclick="switchTab('labels')">Labels</button>
+        <button class="tab-btn" data-tab="train" onclick="switchTab('train')">Train</button>
+        <button class="tab-btn" data-tab="test" onclick="switchTab('test')">Test</button>
+        <button class="tab-btn" data-tab="review" onclick="switchTab('review')">Review</button>
+        <button class="tab-btn" data-tab="integrate" onclick="switchTab('integrate')">Integrate</button>
+    </div>
+
+    <!-- Two-column layout -->
+    <div class="project-layout">
+        <!-- Main content area -->
+        <div class="project-main">
+
+            <!-- IMPORT TAB -->
+            <div class="tab-panel active" id="tab-import">
+                <div class="upload-zone-large" id="import-dropzone" onclick="document.getElementById('import-file-input').click()">
+                    <input type="file" id="import-file-input" multiple accept="image/*" style="display:none" onchange="handleImportFiles(this.files)">
+                    <div class="upload-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <p class="upload-text">Drag and drop or click to upload</p>
+                    <p class="upload-hint">JPG, PNG, GIF, BMP, WEBP, and TIFF</p>
+                </div>
+
+                <div class="import-category-select">
+                    <label>Upload as:</label>
+                    <select id="import-category">
+                        <option value="uncategorized">Uncategorized</option>
+                        <option value="good">Approved (Good)</option>
+                        <option value="defect">Rejected (Defect)</option>
+                    </select>
+                </div>
+
+                <div id="import-progress" class="import-progress" style="display:none;">
+                    <div class="progress-bar"><div class="fill" id="import-progress-bar" style="width:0%">0%</div></div>
+                    <p id="import-status-text">Uploading...</p>
+                </div>
+
+                <h4 class="mt-1">Uploaded Images</h4>
+                <div class="gallery" id="import-gallery">
+                    <div class="empty-state"><p>No images uploaded yet.</p></div>
+                </div>
+            </div>
+
+            <!-- LABELS TAB -->
+            <div class="tab-panel" id="tab-labels">
+                <div class="labels-header">
+                    <h3>Label Definitions</h3>
+                    <p class="text-muted">Training uses binary classification: each image is labeled Approved or Rejected.</p>
+                </div>
+
+                <div class="binary-labels">
+                    <div class="label-card approved">
+                        <div class="label-dot" style="background:#4caf50;"></div>
+                        <span>APPROVED</span>
+                        <span class="label-desc">Good / Pass — image shows acceptable quality</span>
+                    </div>
+                    <div class="label-card rejected">
+                        <div class="label-dot" style="background:#f44336;"></div>
+                        <span>REJECTED</span>
+                        <span class="label-desc">Bad / Fail — image shows defects or issues</span>
+                    </div>
+                </div>
+
+                <h4>Manufacturing Phase Labels</h4>
+                <p class="text-muted">BIMS phases applicable to this project. These tag when images were captured.</p>
+                <div class="phase-labels-list" id="phase-labels-list">
+                    <!-- Populated by JS -->
+                </div>
+
+                <h4>Custom Labels</h4>
+                <div class="custom-labels" id="custom-labels-list">
+                    <!-- Populated by JS -->
+                </div>
+                <div class="add-label-row">
+                    <input type="text" id="new-label-name" placeholder="Label name" maxlength="100">
+                    <input type="color" id="new-label-color" value="#6366f1">
+                    <button class="btn-small" onclick="addCustomLabel()">Add Label</button>
+                </div>
+            </div>
+
+            <!-- TRAIN TAB -->
+            <div class="tab-panel" id="tab-train">
+                <div class="train-header">
+                    <h3>Model Training</h3>
+                    <div class="train-actions">
+                        <button class="btn-train" id="start-train-btn" onclick="startProjectTraining()">Start Training</button>
+                    </div>
+                </div>
+
+                <div class="training-data-summary" id="training-data-summary">
+                    <div class="tds-item good">
+                        <span class="tds-count" id="train-good-count">0</span>
+                        <span class="tds-label">Approved</span>
+                    </div>
+                    <div class="tds-item defect">
+                        <span class="tds-count" id="train-defect-count">0</span>
+                        <span class="tds-label">Rejected</span>
+                    </div>
+                    <div class="tds-item uncat">
+                        <span class="tds-count" id="train-uncat-count">0</span>
+                        <span class="tds-label">Unlabeled</span>
+                    </div>
+                </div>
+
+                <div id="training-progress-section" style="display:none;">
+                    <h4>Training Progress</h4>
+                    <div class="progress-bar"><div class="fill" id="train-progress-bar" style="width:0%">0%</div></div>
+                    <p id="train-status-text">Preparing...</p>
+                </div>
+
+                <div class="train-images-section">
+                    <h4>Training Images</h4>
+                    <div class="filter-bar">
+                        <select id="train-category-filter" onchange="loadTrainingImages()">
+                            <option value="">All</option>
+                            <option value="good">Approved</option>
+                            <option value="defect">Rejected</option>
+                            <option value="uncategorized">Unlabeled</option>
+                        </select>
+                    </div>
+                    <div class="gallery" id="train-gallery">
+                        <div class="empty-state"><p>No training images yet. Import some images first.</p></div>
+                    </div>
+                </div>
+
+                <div class="train-log-section">
+                    <h4>Training Log</h4>
+                    <div class="log-output" id="train-log">No training logs yet.</div>
+                </div>
+            </div>
+
+            <!-- TEST TAB -->
+            <div class="tab-panel" id="tab-test">
+                <h3>Test Model</h3>
+                <div class="test-section">
+                    <h4>INPUT DATA</h4>
+                    <div class="upload-zone-large" id="test-dropzone" onclick="document.getElementById('test-file-input').click()">
+                        <input type="file" id="test-file-input" accept="image/*" style="display:none" onchange="handleTestFile(this.files[0])">
+                        <div class="upload-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </div>
+                        <p class="upload-text">Drop an image to test</p>
+                    </div>
+                    <div class="test-actions">
+                        <button class="btn-cancel" onclick="clearTestInput()">Clear</button>
+                        <button class="btn-invoke" onclick="invokeTest()">Invoke</button>
+                    </div>
+                </div>
+                <div class="test-results" id="test-results">
+                    <h4>RESULTS</h4>
+                    <div class="empty-state"><p>No Results — Invoke the function to see results</p></div>
+                </div>
+            </div>
+
+            <!-- REVIEW TAB -->
+            <div class="tab-panel" id="tab-review">
+                <h3>Review Inspections</h3>
+                <div class="filter-bar">
+                    <select id="review-filter" onchange="loadReviewImages()">
+                        <option value="">All Results</option>
+                        <option value="pass">Pass</option>
+                        <option value="fail">Fail</option>
+                    </select>
+                </div>
+                <div class="gallery" id="review-gallery">
+                    <div class="empty-state"><p>No inspections yet. Run a test first.</p></div>
+                </div>
+            </div>
+
+            <!-- INTEGRATE TAB -->
+            <div class="tab-panel" id="tab-integrate">
+                <h3>API Integration</h3>
+                <div class="integrate-section">
+                    <h4>Project API Endpoint</h4>
+                    <div class="code-block">
+                        <code>POST /api/v1/projects/{{ project.id }}/training/upload</code>
+                    </div>
+
+                    <h4>Python</h4>
+                    <pre class="code-block"><code>import requests
+
+API_URL = "{{ request.url.scheme }}://{{ request.url.netloc }}"
+PROJECT_ID = "{{ project.id }}"
+API_KEY = "your-api-key"
+
+# Upload training image
+with open("image.jpg", "rb") as f:
+    resp = requests.post(
+        f"{API_URL}/api/v1/projects/{PROJECT_ID}/training/upload",
+        files={"file": f},
+        data={"category": "good"},
+        headers={"X-API-Key": API_KEY},
+    )
+print(resp.json())
+
+# Get project stats
+resp = requests.get(
+    f"{API_URL}/api/v1/projects/{PROJECT_ID}/stats",
+    headers={"X-API-Key": API_KEY},
+)
+print(resp.json())</code></pre>
+
+                    <h4>cURL</h4>
+                    <pre class="code-block"><code># Upload training image
+curl -X POST "{{ request.url.scheme }}://{{ request.url.netloc }}/api/v1/projects/{{ project.id }}/training/upload" \
+  -H "X-API-Key: your-api-key" \
+  -F "file=@image.jpg" \
+  -F "category=good"
+
+# Get project stats
+curl "{{ request.url.scheme }}://{{ request.url.netloc }}/api/v1/projects/{{ project.id }}/stats" \
+  -H "X-API-Key: your-api-key"</code></pre>
+
+                    <h4>API Key</h4>
+                    <div class="api-key-display">
+                        <input type="password" id="api-key-display" value="Set via API_KEY env var" readonly>
+                        <button class="btn-small" onclick="toggleApiKeyVisibility()">Show</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Sidebar -->
+        <div class="project-sidebar">
+            <div class="sidebar-section">
+                <h4 class="sidebar-title">STATS</h4>
+
+                <div class="stat-row">
+                    <span class="stat-label-sm">Annotations</span>
+                    <span class="stat-value-sm" id="stat-annotations">0 of 0</span>
+                </div>
+                <div class="stat-bar">
+                    <div class="stat-bar-fill blue" id="annotations-bar" style="width:0%"></div>
+                </div>
+
+                <div class="stat-row">
+                    <span class="stat-label-sm">Accuracy</span>
+                    <span class="stat-value-sm" id="stat-accuracy">0%</span>
+                </div>
+                <div class="stat-bar">
+                    <div class="stat-bar-fill green" id="accuracy-bar" style="width:0%"></div>
+                </div>
+
+                <div class="stat-row">
+                    <span class="stat-label-sm">Approved</span>
+                    <span class="stat-value-sm" id="stat-approved">0</span>
+                </div>
+                <div class="stat-bar">
+                    <div class="stat-bar-fill green" id="approved-bar" style="width:0%"></div>
+                </div>
+
+                <div class="stat-row">
+                    <span class="stat-label-sm">Rejected</span>
+                    <span class="stat-value-sm" id="stat-rejected">0</span>
+                </div>
+                <div class="stat-bar">
+                    <div class="stat-bar-fill red" id="rejected-bar" style="width:0%"></div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h4 class="sidebar-title">MODEL</h4>
+                <div class="stat-row">
+                    <span class="stat-label-sm">Status</span>
+                    <span class="stat-value-sm" id="stat-model-status">{{ project.model_status }}</span>
+                </div>
+                {% if project.model_version %}
+                <div class="stat-row">
+                    <span class="stat-label-sm">Version</span>
+                    <span class="stat-value-sm">{{ project.model_version }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="sidebar-section">
+                <h4 class="sidebar-title">USAGE</h4>
+                <div class="usage-placeholder">
+                    <div class="mini-chart-placeholder">
+                        <span class="text-muted">Invokes per day</span>
+                        <div class="mini-bars">
+                            <div class="mini-bar" style="height:20%"></div>
+                            <div class="mini-bar" style="height:45%"></div>
+                            <div class="mini-bar" style="height:30%"></div>
+                            <div class="mini-bar" style="height:65%"></div>
+                            <div class="mini-bar" style="height:40%"></div>
+                            <div class="mini-bar" style="height:55%"></div>
+                            <div class="mini-bar" style="height:35%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const PROJECT_ID = "{{ project.id }}";
+    const PROJECT_DATA = {{ project | tojson }};
+</script>
+<script src="/static/js/project_detail.js"></script>
+{% endblock %}

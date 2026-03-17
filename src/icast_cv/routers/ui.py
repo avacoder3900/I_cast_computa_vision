@@ -9,7 +9,9 @@ from fastapi.templating import Jinja2Templates
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from icast_cv.crud.inspection_crud import get_inspection_stats
+from icast_cv.crud.project_crud import get_project
 from icast_cv.db import get_database
+from icast_cv.exceptions import NotFoundError
 
 _TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(_TEMPLATE_DIR))
@@ -20,8 +22,31 @@ DB = Annotated[AsyncIOMotorDatabase, Depends(get_database)]
 
 
 @router.get("/ui/", response_class=HTMLResponse)
+async def projects_landing(request: Request, db: DB) -> HTMLResponse:
+    """Projects landing page — list all projects."""
+    return templates.TemplateResponse("projects.html", {"request": request})
+
+
+@router.get("/ui/project/{project_id}", response_class=HTMLResponse)
+async def project_detail(request: Request, project_id: str, db: DB) -> HTMLResponse:
+    """Project detail page with tabs."""
+    try:
+        project = await get_project(db, project_id)
+    except NotFoundError:
+        return templates.TemplateResponse(
+            "projects.html",
+            {"request": request},
+            status_code=404,
+        )
+    return templates.TemplateResponse(
+        "project_detail.html",
+        {"request": request, "project": project.model_dump()},
+    )
+
+
+@router.get("/ui/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, db: DB) -> HTMLResponse:
-    """Dashboard overview page."""
+    """Legacy dashboard overview page."""
     try:
         stats = await get_inspection_stats(db)
     except Exception:

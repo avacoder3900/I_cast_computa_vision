@@ -117,6 +117,29 @@ const API = {
 
     // Gallery
     getGalleryAll(params) { return this.get('/api/v1/gallery/all', params); },
+
+    // Projects
+    listProjects(params) { return this.get('/api/v1/projects', params); },
+    getProject(id) { return this.get(`/api/v1/projects/${id}`); },
+    createProject(data) { return this.post('/api/v1/projects', data); },
+    updateProject(id, data) { return this.patch(`/api/v1/projects/${id}`, data); },
+    deleteProject(id) { return this.del(`/api/v1/projects/${id}`); },
+    duplicateProject(id) { return this.post(`/api/v1/projects/${id}/duplicate`); },
+    getProjectStats(id) { return this.get(`/api/v1/projects/${id}/stats`); },
+    getProjectImages(id, params) { return this.get(`/api/v1/projects/${id}/images`, params); },
+    labelProjectImage(projectId, imageId, label) {
+        return this.patch(`/api/v1/projects/${projectId}/images/${imageId}/label`, { label });
+    },
+    getProjectTrainingStats(id) { return this.get(`/api/v1/projects/${id}/training/data-stats`); },
+    getProjectTrainingImages(id, params) { return this.get(`/api/v1/projects/${id}/training/images`, params); },
+    uploadProjectTrainingImage(id, file, category) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('category', category);
+        return this.upload(`/api/v1/projects/${id}/training/upload`, fd);
+    },
+    getProjectInspections(id, params) { return this.get(`/api/v1/projects/${id}/inspections`, params); },
+    getGlobalLabels() { return this.get('/api/v1/projects/labels/global'); },
 };
 
 // Auto-init
